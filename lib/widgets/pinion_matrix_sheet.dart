@@ -121,7 +121,7 @@ class PinionMatrixSheet extends StatelessWidget {
             child: ListView.separated(
               shrinkWrap: true,
               itemCount: table.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 4),
+              separatorBuilder: (_, _) => const SizedBox(height: 4),
               itemBuilder: (context, index) {
                 final row = table[index];
                 final pinion = row['pinion'] as int;
@@ -137,10 +137,10 @@ class PinionMatrixSheet extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      color: isCurrent ? RcTheme.electricBlue.withOpacity(0.25) : RcTheme.elevatedNavy.withOpacity(0.5),
+                      color: isCurrent ? RcTheme.electricBlue.withValues(alpha: 0.25) : RcTheme.elevatedNavy.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: isCurrent ? RcTheme.accentCyan : RcTheme.borderNavy.withOpacity(0.3),
+                        color: isCurrent ? RcTheme.accentCyan : RcTheme.borderNavy.withValues(alpha: 0.3),
                         width: isCurrent ? 1.5 : 1.0,
                       ),
                     ),
@@ -180,7 +180,7 @@ class PinionMatrixSheet extends StatelessWidget {
                         Text(
                           fdrFormatted,
                           style: TextStyle(
-                            color: isCurrent ? RcTheme.textWhite : RcTheme.textWhite.withOpacity(0.9),
+                            color: isCurrent ? RcTheme.textWhite : RcTheme.textWhite.withValues(alpha: 0.9),
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.5,

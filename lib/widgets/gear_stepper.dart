@@ -120,7 +120,7 @@ class GearStepper extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: RcTheme.elevatedNavy,
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: RcTheme.borderNavy.withOpacity(0.5)),
+                      border: Border.all(color: RcTheme.borderNavy.withValues(alpha: 0.5)),
                     ),
                     child: Text(
                       subtitle!,
@@ -142,7 +142,7 @@ class GearStepper extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: RcTheme.backgroundNavy.withOpacity(0.6),
+                  color: RcTheme.backgroundNavy.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: RcTheme.borderNavy),
                 ),
@@ -235,7 +235,7 @@ class GearStepper extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: isPrimary ? RcTheme.accentCyan.withOpacity(0.5) : RcTheme.borderNavy,
+              color: isPrimary ? RcTheme.accentCyan.withValues(alpha: 0.5) : RcTheme.borderNavy,
             ),
           ),
           child: Text(

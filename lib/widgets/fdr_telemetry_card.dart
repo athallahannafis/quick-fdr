@@ -32,7 +32,7 @@ class FdrTelemetryCard extends StatelessWidget {
         border: Border.all(color: RcTheme.borderNavy, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: RcTheme.accentCyan.withOpacity(0.08),
+            color: RcTheme.accentCyan.withValues(alpha: 0.08),
             blurRadius: 20,
             spreadRadius: 2,
             offset: const Offset(0, 4),
@@ -134,7 +134,7 @@ class FdrTelemetryCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: RcTheme.backgroundNavy.withOpacity(0.8),
+                    color: RcTheme.backgroundNavy.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: RcTheme.borderNavy),
                   ),
@@ -149,7 +149,7 @@ class FdrTelemetryCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          '($spur\T / $pinion\T) × ${igr.toStringAsFixed(2)} IGR',
+                          '(${spur}T / ${pinion}T) × ${igr.toStringAsFixed(2)} IGR',
                           style: const TextStyle(
                             color: RcTheme.textWhite,
                             fontSize: 13,
@@ -171,7 +171,7 @@ class FdrTelemetryCard extends StatelessWidget {
                     Text(
                       'Gear Ratio (Spur/Pinion): ',
                       style: TextStyle(
-                        color: RcTheme.textMuted.withOpacity(0.8),
+                        color: RcTheme.textMuted.withValues(alpha: 0.8),
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),

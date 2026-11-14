@@ -64,7 +64,7 @@ class KitSelectorChips extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: presets.length + 1,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           // "+ Add Kit" action chip at the end
           if (index == presets.length) {
@@ -79,7 +79,7 @@ class KitSelectorChips extends StatelessWidget {
                 ),
               ),
               backgroundColor: RcTheme.surfaceNavy,
-              side: BorderSide(color: RcTheme.accentCyan.withOpacity(0.5), width: 1.2),
+              side: BorderSide(color: RcTheme.accentCyan.withValues(alpha: 0.5), width: 1.2),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               onPressed: onAddPreset,
             );
@@ -109,7 +109,7 @@ class KitSelectorChips extends StatelessWidget {
                     Text(
                       preset.name,
                       style: TextStyle(
-                        color: isSelected ? RcTheme.textWhite : RcTheme.textWhite.withOpacity(0.9),
+                        color: isSelected ? RcTheme.textWhite : RcTheme.textWhite.withValues(alpha: 0.9),
                         fontSize: 13,
                         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                       ),
@@ -118,7 +118,7 @@ class KitSelectorChips extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: isSelected ? RcTheme.backgroundNavy.withOpacity(0.4) : RcTheme.elevatedNavy,
+                        color: isSelected ? RcTheme.backgroundNavy.withValues(alpha: 0.4) : RcTheme.elevatedNavy,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(

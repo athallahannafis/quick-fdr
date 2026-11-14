@@ -141,7 +141,7 @@ class _RcGearPainter extends CustomPainter {
 
     // Cutout spokes
     final spokePaint = Paint()
-      ..color = strokeColor.withOpacity(0.5)
+      ..color = strokeColor.withValues(alpha: 0.5)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth * 0.8;
 

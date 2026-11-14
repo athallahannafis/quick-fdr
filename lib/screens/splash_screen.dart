@@ -78,7 +78,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     border: Border.all(color: RcTheme.borderNavy, width: 2),
                     boxShadow: [
                       BoxShadow(
-                        color: RcTheme.accentCyan.withOpacity(0.12),
+                        color: RcTheme.accentCyan.withValues(alpha: 0.12),
                         blurRadius: 28,
                         spreadRadius: 4,
                       ),

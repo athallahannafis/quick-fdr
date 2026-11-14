@@ -98,9 +98,9 @@ class _AddPresetDialogState extends State<AddPresetDialog> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: RcTheme.lockedGold.withOpacity(0.12),
+                    color: RcTheme.lockedGold.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: RcTheme.lockedGold.withOpacity(0.5)),
+                    border: Border.all(color: RcTheme.lockedGold.withValues(alpha: 0.5)),
                   ),
                   child: const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
