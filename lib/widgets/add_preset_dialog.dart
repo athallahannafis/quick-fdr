@@ -59,7 +59,6 @@ class _AddPresetDialogState extends State<AddPresetDialog> {
       backgroundColor: RcTheme.surfaceNavy,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: RcTheme.borderNavy, width: 1.5),
       ),
       child: SingleChildScrollView(
         child: Padding(
@@ -100,7 +99,6 @@ class _AddPresetDialogState extends State<AddPresetDialog> {
                   decoration: BoxDecoration(
                     color: RcTheme.lockedGold.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: RcTheme.lockedGold.withValues(alpha: 0.5)),
                   ),
                   child: const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,

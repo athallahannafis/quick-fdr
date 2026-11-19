@@ -24,6 +24,9 @@ class CalculatorScreen extends StatefulWidget {
 }
 
 class _CalculatorScreenState extends State<CalculatorScreen> {
+  static const int _minPinion = 6;
+  static const int _maxPinion = 80;
+
   late final PresetStorage _storage;
 
   List<CarPreset> _presets = [];
@@ -136,9 +139,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         igr: _selectedPreset!.igr,
         currentSpur: _currentSpur,
         currentPinion: _currentPinion,
+        minPinion: _minPinion,
         onSelectPinion: (newPinion) {
           setState(() {
-            _currentPinion = newPinion;
+            _currentPinion = newPinion.clamp(_minPinion, _maxPinion);
           });
         },
       ),
@@ -179,7 +183,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               decoration: BoxDecoration(
                 color: RcTheme.surfaceNavy,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: RcTheme.borderNavy),
               ),
               child: const RcGearLogo(size: 20),
             ),
@@ -251,8 +254,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                       label: 'PINION GEAR',
                       subtitle: 'Motor shaft gear',
                       value: _currentPinion,
-                      minValue: 8,
-                      maxValue: 80,
+                      minValue: _minPinion,
+                      maxValue: _maxPinion,
                       stepIntervals: const [1, 5],
                       onChanged: (val) {
                         setState(() {

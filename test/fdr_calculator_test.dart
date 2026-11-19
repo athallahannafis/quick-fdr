@@ -55,5 +55,18 @@ void main() {
       expect(currentEntry['pinion'], 22);
       expect(currentEntry['fdrFormatted'], '8.27');
     });
+
+    test('clamps pinion reference table to minPinion', () {
+      final table = FdrCalculator.calculatePinionTable(
+        spur: 70,
+        igr: 2.60,
+        basePinion: 6,
+        range: 6,
+        minPinion: 6,
+      );
+
+      expect(table.first['pinion'], 6);
+      expect(table.last['pinion'], 12);
+    });
   });
 }

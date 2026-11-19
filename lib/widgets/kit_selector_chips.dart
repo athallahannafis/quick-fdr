@@ -27,7 +27,6 @@ class KitSelectorChips extends StatelessWidget {
           backgroundColor: RcTheme.surfaceNavy,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: RcTheme.borderNavy),
           ),
           title: Text(
             'Delete ${preset.name}?',
@@ -79,7 +78,7 @@ class KitSelectorChips extends StatelessWidget {
                 ),
               ),
               backgroundColor: RcTheme.surfaceNavy,
-              side: BorderSide(color: RcTheme.accentCyan.withValues(alpha: 0.5), width: 1.2),
+              side: BorderSide.none,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               onPressed: onAddPreset,
             );
@@ -96,13 +95,6 @@ class KitSelectorChips extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: isSelected ? RcTheme.accentCyan : RcTheme.borderNavy,
-                    width: isSelected ? 1.5 : 1.0,
-                  ),
-                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

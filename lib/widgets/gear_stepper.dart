@@ -38,7 +38,6 @@ class GearStepper extends StatelessWidget {
           backgroundColor: RcTheme.surfaceNavy,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: RcTheme.borderNavy),
           ),
           title: Text(
             'Set $label Teeth',
@@ -120,7 +119,6 @@ class GearStepper extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: RcTheme.elevatedNavy,
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: RcTheme.borderNavy.withValues(alpha: 0.5)),
                     ),
                     child: Text(
                       subtitle!,
@@ -144,7 +142,6 @@ class GearStepper extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: RcTheme.backgroundNavy.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: RcTheme.borderNavy),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -232,12 +229,6 @@ class GearStepper extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isPrimary ? RcTheme.accentCyan.withValues(alpha: 0.5) : RcTheme.borderNavy,
-            ),
-          ),
           child: Text(
             text,
             style: TextStyle(

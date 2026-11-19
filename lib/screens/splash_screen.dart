@@ -75,7 +75,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: RcTheme.surfaceNavy,
-                    border: Border.all(color: RcTheme.borderNavy, width: 2),
                     boxShadow: [
                       BoxShadow(
                         color: RcTheme.accentCyan.withValues(alpha: 0.12),
@@ -104,7 +103,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   decoration: BoxDecoration(
                     color: RcTheme.elevatedNavy,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: RcTheme.borderNavy, width: 1),
                   ),
                   child: const Text(
                     'RC FINAL DRIVE RATIO',

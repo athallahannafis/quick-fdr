@@ -8,6 +8,7 @@ class PinionMatrixSheet extends StatelessWidget {
   final double igr;
   final int currentSpur;
   final int currentPinion;
+  final int minPinion;
   final ValueChanged<int> onSelectPinion;
 
   const PinionMatrixSheet({
@@ -16,6 +17,7 @@ class PinionMatrixSheet extends StatelessWidget {
     required this.igr,
     required this.currentSpur,
     required this.currentPinion,
+    this.minPinion = 6,
     required this.onSelectPinion,
   });
 
@@ -26,6 +28,7 @@ class PinionMatrixSheet extends StatelessWidget {
       igr: igr,
       basePinion: currentPinion,
       range: 6,
+      minPinion: minPinion,
     );
 
     return Container(
@@ -139,10 +142,6 @@ class PinionMatrixSheet extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isCurrent ? RcTheme.electricBlue.withValues(alpha: 0.25) : RcTheme.elevatedNavy.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isCurrent ? RcTheme.accentCyan : RcTheme.borderNavy.withValues(alpha: 0.3),
-                        width: isCurrent ? 1.5 : 1.0,
-                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

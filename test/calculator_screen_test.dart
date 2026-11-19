@@ -69,4 +69,43 @@ void main() {
 
     expect(find.text('PINION FDR MATRIX'), findsNothing);
   });
+
+  testWidgets('allows pinion down to 6T and clamps below 6T', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: RcTheme.themeData,
+        home: CalculatorScreen(storage: storage),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // TT02 starts at Pinion 22; decrement by 5 three times (22 -> 17 -> 12 -> 7)
+    for (int i = 0; i < 3; i++) {
+      await tester.tap(find.text('-5').first);
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('7'), findsOneWidget);
+
+    // Decrement by 1 to reach 6T (70 / 6 * 2.60 = 30.333... -> 30.33)
+    await tester.tap(find.text('-1').first);
+    await tester.pumpAndSettle();
+    expect(find.text('6'), findsOneWidget);
+    expect(find.text('30.33'), findsOneWidget);
+
+    // Further decrementing clamps at 6T
+    await tester.tap(find.text('-1').first);
+    await tester.pumpAndSettle();
+    expect(find.text('6'), findsOneWidget);
+
+    await tester.tap(find.text('-5').first);
+    await tester.pumpAndSettle();
+    expect(find.text('6'), findsOneWidget);
+
+    // Pinion Matrix should start at 6T and not show 5T
+    await tester.tap(find.byTooltip('Pinion Matrix'));
+    await tester.pumpAndSettle();
+    expect(find.text('6 T'), findsOneWidget);
+    expect(find.text('5 T'), findsNothing);
+  });
 }

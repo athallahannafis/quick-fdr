@@ -29,7 +29,6 @@ class FdrTelemetryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: RcTheme.surfaceNavy,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: RcTheme.borderNavy, width: 1.5),
         boxShadow: [
           BoxShadow(
             color: RcTheme.accentCyan.withValues(alpha: 0.08),
@@ -91,7 +90,6 @@ class FdrTelemetryCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: RcTheme.backgroundNavy,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: RcTheme.borderNavy),
                       ),
                       child: Text(
                         kitName.toUpperCase(),
@@ -136,7 +134,6 @@ class FdrTelemetryCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: RcTheme.backgroundNavy.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: RcTheme.borderNavy),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

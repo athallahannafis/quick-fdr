@@ -38,14 +38,16 @@ class FdrCalculator {
   /// Generates a reference lookup table for adjacent pinion sizes.
   ///
   /// [range] specifies how many teeth above and below [basePinion] to include.
+  /// [minPinion] specifies the lowest pinion tooth count to include.
   static List<Map<String, dynamic>> calculatePinionTable({
     required int spur,
     required double igr,
     required int basePinion,
     int range = 5,
+    int minPinion = 1,
   }) {
     final list = <Map<String, dynamic>>[];
-    final startPinion = (basePinion - range < 1) ? 1 : (basePinion - range);
+    final startPinion = (basePinion - range < minPinion) ? minPinion : (basePinion - range);
     final endPinion = basePinion + range;
 
     for (int p = startPinion; p <= endPinion; p++) {
