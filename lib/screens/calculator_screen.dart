@@ -126,12 +126,18 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     _storage.saveLastSelectedKitId(preset.id);
   }
 
-  Future<void> _onPinPresetLeft(String id) async {
-    await _storage.pinPresetToLeft(id);
+  Future<void> _onTogglePinPreset(String id) async {
+    await _storage.togglePinPreset(id);
     final updated = await _storage.loadAllPresets();
     if (!mounted) return;
     setState(() {
       _presets = updated;
+      if (_selectedPreset?.id == id) {
+        final match = updated.where((p) => p.id == id);
+        if (match.isNotEmpty) {
+          _selectedPreset = match.first;
+        }
+      }
     });
   }
 
@@ -315,7 +321,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                 selectedPreset: activeKit,
                 onSelectPreset: _onSelectPreset,
                 onAddPreset: _onAddPreset,
-                onPinPresetLeft: _onPinPresetLeft,
+                onTogglePinPreset: _onTogglePinPreset,
                 onRenamePreset: _onRenamePreset,
                 onDeletePreset: _onDeletePreset,
               ),

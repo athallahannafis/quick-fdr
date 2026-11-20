@@ -7,16 +7,16 @@ import 'package:quick_fdr/widgets/add_preset_dialog.dart';
 
 void main() {
   const defaultPresets = [
-    CarPreset(id: 'lc10b5', name: 'LC10B5', igr: 2.50, defaultSpur: 78, defaultPinion: 23, isBuiltIn: true),
+    CarPreset(id: 'lc10b5', name: 'LC10B5', igr: 2.50, defaultSpur: 78, defaultPinion: 23, isBuiltIn: true, isPinned: true),
     CarPreset(id: 'ptg2r', name: 'PTG2R', igr: 2.50, defaultSpur: 70, defaultPinion: 25, isBuiltIn: true),
     CarPreset(id: 'tt02', name: 'TT02', igr: 2.60, defaultSpur: 70, defaultPinion: 22, isBuiltIn: true),
   ];
 
   group('KitSelectorChips Widget', () {
-    testWidgets('renders preset chips, highlights selected, and triggers callbacks', (WidgetTester tester) async {
+    testWidgets('renders preset chips, flagged pin badges, and triggers callbacks', (WidgetTester tester) async {
       CarPreset selected = defaultPresets[2]; // TT02
       bool addTapped = false;
-      String? pinnedId;
+      String? toggledPinId;
       String? renamedId;
       String? renamedValue;
       String? deletedId;
@@ -38,8 +38,8 @@ void main() {
                   onAddPreset: () {
                     addTapped = true;
                   },
-                  onPinPresetLeft: (id) {
-                    pinnedId = id;
+                  onTogglePinPreset: (id) {
+                    toggledPinId = id;
                   },
                   onRenamePreset: (id, newName) {
                     renamedId = id;
@@ -55,11 +55,14 @@ void main() {
         ),
       );
 
-      // Verify all default preset names, Add Kit chip, and triple-dot menus appear
+      // Verify all default preset names, flagged pin icon on LC10B5 only, and triple-dot menus appear
       expect(find.text('LC10B5'), findsOneWidget);
       expect(find.text('PTG2R'), findsOneWidget);
       expect(find.text('TT02'), findsOneWidget);
       expect(find.text('+ Add Kit'), findsOneWidget);
+      expect(find.byKey(const Key('preset_pin_badge_lc10b5')), findsOneWidget);
+      expect(find.byKey(const Key('preset_pin_badge_ptg2r')), findsNothing);
+      expect(find.byKey(const Key('preset_pin_badge_tt02')), findsNothing);
       expect(find.byIcon(Icons.more_vert_rounded), findsNWidgets(3));
 
       // Tap LC10B5
@@ -72,12 +75,19 @@ void main() {
       await tester.pump();
       expect(addTapped, isTrue);
 
-      // Open TT02 menu and tap Pin to Leftmost
+      // Open pinned LC10B5 menu -> shows "Unpin"
+      await tester.tap(find.byKey(const Key('preset_menu_lc10b5')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Unpin'));
+      await tester.pumpAndSettle();
+      expect(toggledPinId, 'lc10b5');
+
+      // Open unpinned TT02 menu and tap Pin to Leftmost
       await tester.tap(find.byKey(const Key('preset_menu_tt02')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Pin to Leftmost'));
       await tester.pumpAndSettle();
-      expect(pinnedId, 'tt02');
+      expect(toggledPinId, 'tt02');
 
       // Open LC10B5 menu and Rename
       await tester.tap(find.byKey(const Key('preset_menu_lc10b5')));

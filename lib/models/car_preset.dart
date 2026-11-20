@@ -8,6 +8,7 @@ class CarPreset {
   final int defaultSpur;
   final int defaultPinion;
   final bool isBuiltIn;
+  final bool isPinned;
 
   const CarPreset({
     required this.id,
@@ -16,6 +17,7 @@ class CarPreset {
     required this.defaultSpur,
     required this.defaultPinion,
     this.isBuiltIn = false,
+    this.isPinned = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -26,6 +28,7 @@ class CarPreset {
       'defaultSpur': defaultSpur,
       'defaultPinion': defaultPinion,
       'isBuiltIn': isBuiltIn,
+      'isPinned': isPinned,
     };
   }
 
@@ -37,6 +40,7 @@ class CarPreset {
       defaultSpur: (json['defaultSpur'] as num).toInt(),
       defaultPinion: (json['defaultPinion'] as num).toInt(),
       isBuiltIn: (json['isBuiltIn'] as bool?) ?? false,
+      isPinned: (json['isPinned'] as bool?) ?? false,
     );
   }
 
@@ -44,6 +48,7 @@ class CarPreset {
     String? name,
     int? defaultSpur,
     int? defaultPinion,
+    bool? isPinned,
   }) {
     // Note: igr and isBuiltIn are deliberately NOT alterable here to preserve kit integrity
     return CarPreset(
@@ -53,6 +58,7 @@ class CarPreset {
       defaultSpur: defaultSpur ?? this.defaultSpur,
       defaultPinion: defaultPinion ?? this.defaultPinion,
       isBuiltIn: isBuiltIn,
+      isPinned: isPinned ?? this.isPinned,
     );
   }
 }

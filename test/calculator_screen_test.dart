@@ -313,7 +313,7 @@ void main() {
     expect(find.byTooltip('Install App'), findsNothing);
   });
 
-  testWidgets('pins, renames, and removes built-in presets with confirmation and persistence', (WidgetTester tester) async {
+  testWidgets('pins multiple presets to leftmost with pin flags, unpins, renames, and removes', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: RcTheme.themeData,
@@ -322,14 +322,34 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Pin TT02 to leftmost
+    // Pin TT02 and PTG2R -> both move to leftmost with pin flags
     await tester.tap(find.byKey(const Key('preset_menu_tt02')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Pin to Leftmost'));
     await tester.pumpAndSettle();
 
-    final reordered = await storage.loadAllPresets();
-    expect(reordered.first.id, 'tt02');
+    await tester.tap(find.byKey(const Key('preset_menu_ptg2r')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pin to Leftmost'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('preset_pin_badge_tt02')), findsOneWidget);
+    expect(find.byKey(const Key('preset_pin_badge_ptg2r')), findsOneWidget);
+    expect(find.byKey(const Key('preset_pin_badge_lc10b5')), findsNothing);
+
+    var reordered = await storage.loadAllPresets();
+    expect(reordered.map((p) => p.id).toList(), ['tt02', 'ptg2r', 'lc10b5']);
+
+    // Unpin TT02 -> PTG2R remains leftmost and pinned; TT02 loses pin flag
+    await tester.tap(find.byKey(const Key('preset_menu_tt02')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unpin'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('preset_pin_badge_tt02')), findsNothing);
+    expect(find.byKey(const Key('preset_pin_badge_ptg2r')), findsOneWidget);
+    reordered = await storage.loadAllPresets();
+    expect(reordered.map((p) => p.id).toList(), ['ptg2r', 'tt02', 'lc10b5']);
 
     // Rename TT02 to "My TT02"
     await tester.tap(find.byKey(const Key('preset_menu_tt02')));

@@ -51,6 +51,13 @@ class PresetStorage {
     return presets;
   }
 
+  List<CarPreset> _normalizePinOrder(List<CarPreset> presets) {
+    return [
+      ...presets.where((p) => p.isPinned),
+      ...presets.where((p) => !p.isPinned),
+    ];
+  }
+
   Future<void> _savePresetsList(
     SharedPreferences prefs,
     List<CarPreset> presets,
@@ -68,12 +75,15 @@ class PresetStorage {
 
     if (storedJsonList == null) {
       final legacyCustomList = prefs.getStringList(_customPresetsKey) ?? [];
-      final initial = [...defaultPresets, ..._decodePresets(legacyCustomList)];
+      final initial = _normalizePinOrder([
+        ...defaultPresets,
+        ..._decodePresets(legacyCustomList),
+      ]);
       await _savePresetsList(prefs, initial);
       return initial;
     }
 
-    return _decodePresets(storedJsonList);
+    return _normalizePinOrder(_decodePresets(storedJsonList));
   }
 
   /// Saves a new custom preset or updates an existing preset in place.
@@ -86,10 +96,10 @@ class PresetStorage {
     } else {
       presets.add(preset);
     }
-    await _savePresetsList(prefs, presets);
+    await _savePresetsList(prefs, _normalizePinOrder(presets));
   }
 
-  /// Renames any preset (built-in or custom) while preserving its IGR and gear defaults.
+  /// Renames any preset (built-in or custom) while preserving its IGR, pin state, and gear defaults.
   Future<void> renamePreset(String id, String newName) async {
     final trimmed = newName.trim();
     if (trimmed.isEmpty) return;
@@ -103,16 +113,27 @@ class PresetStorage {
     await _savePresetsList(prefs, presets);
   }
 
-  /// Pins any preset to the leftmost (first) position.
-  Future<void> pinPresetToLeft(String id) async {
+  /// Sets a preset's pinned flag and keeps all pinned presets grouped at the leftmost positions.
+  Future<void> setPresetPinned(String id, {required bool isPinned}) async {
     final presets = await loadAllPresets();
     final index = presets.indexWhere((p) => p.id == id);
-    if (index <= 0) return;
+    if (index < 0) return;
 
-    final target = presets.removeAt(index);
-    presets.insert(0, target);
+    final updated = presets.removeAt(index).copyWith(isPinned: isPinned);
+    final firstUnpinned = presets.indexWhere((p) => !p.isPinned);
+    final insertIndex = firstUnpinned == -1 ? presets.length : firstUnpinned;
+    presets.insert(insertIndex, updated);
+
     final prefs = await SharedPreferences.getInstance();
-    await _savePresetsList(prefs, presets);
+    await _savePresetsList(prefs, _normalizePinOrder(presets));
+  }
+
+  /// Toggles whether a preset is pinned to the leftmost pinned group.
+  Future<void> togglePinPreset(String id) async {
+    final presets = await loadAllPresets();
+    final index = presets.indexWhere((p) => p.id == id);
+    if (index < 0) return;
+    await setPresetPinned(id, isPinned: !presets[index].isPinned);
   }
 
   /// Deletes a preset by ID (built-in or custom) and clears its saved gear values.

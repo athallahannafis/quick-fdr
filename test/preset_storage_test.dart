@@ -110,10 +110,35 @@ void main() {
       expect(tt02.defaultPinion, 22);
     });
 
-    test('pins preset to leftmost position persistently', () async {
-      await storage.pinPresetToLeft('tt02');
-      final presets = await storage.loadAllPresets();
-      expect(presets.map((p) => p.id).toList(), ['tt02', 'lc10b5', 'ptg2r']);
+    test('supports pinning multiple presets to leftmost and unpinning them', () async {
+      await storage.togglePinPreset('tt02');
+      await storage.togglePinPreset('ptg2r');
+
+      var presets = await storage.loadAllPresets();
+      expect(presets.map((p) => p.id).toList(), ['tt02', 'ptg2r', 'lc10b5']);
+      expect(presets[0].isPinned, isTrue);
+      expect(presets[1].isPinned, isTrue);
+      expect(presets[2].isPinned, isFalse);
+
+      // Adding a new unpinned custom preset places it after all pinned presets
+      const custom = CarPreset(
+        id: 'custom_x4',
+        name: 'Xray X4',
+        igr: 1.90,
+        defaultSpur: 90,
+        defaultPinion: 30,
+        isBuiltIn: false,
+      );
+      await storage.saveCustomPreset(custom);
+      presets = await storage.loadAllPresets();
+      expect(presets.map((p) => p.id).toList(), ['tt02', 'ptg2r', 'lc10b5', 'custom_x4']);
+
+      // Unpin TT02 -> PTG2R remains leftmost pinned, TT02 moves to unpinned section
+      await storage.togglePinPreset('tt02');
+      presets = await storage.loadAllPresets();
+      expect(presets.map((p) => p.id).toList(), ['ptg2r', 'tt02', 'lc10b5', 'custom_x4']);
+      expect(presets[0].isPinned, isTrue);
+      expect(presets[1].isPinned, isFalse);
     });
 
     test('stores and retrieves last selected kit ID', () async {

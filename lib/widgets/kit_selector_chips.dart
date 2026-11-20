@@ -3,18 +3,18 @@ import '../models/car_preset.dart';
 import '../theme/rc_theme.dart';
 
 enum _PresetMenuAction {
-  pinLeft,
+  togglePin,
   rename,
   remove,
 }
 
-/// Horizontal scrollable preset selector chips with kit name, IGR badge, and per-preset menu.
+/// Horizontal scrollable preset selector chips with kit name, IGR badge, pin flag, and per-preset menu.
 class KitSelectorChips extends StatelessWidget {
   final List<CarPreset> presets;
   final CarPreset? selectedPreset;
   final ValueChanged<CarPreset> onSelectPreset;
   final VoidCallback onAddPreset;
-  final ValueChanged<String> onPinPresetLeft;
+  final ValueChanged<String> onTogglePinPreset;
   final void Function(String id, String newName) onRenamePreset;
   final ValueChanged<String> onDeletePreset;
 
@@ -24,7 +24,7 @@ class KitSelectorChips extends StatelessWidget {
     required this.selectedPreset,
     required this.onSelectPreset,
     required this.onAddPreset,
-    required this.onPinPresetLeft,
+    required this.onTogglePinPreset,
     required this.onRenamePreset,
     required this.onDeletePreset,
   });
@@ -110,7 +110,6 @@ class KitSelectorChips extends StatelessWidget {
 
           final preset = presets[index];
           final isSelected = selectedPreset?.id == preset.id;
-          final isLeftmost = index == 0;
 
           return Material(
             color: isSelected ? RcTheme.electricBlue : RcTheme.surfaceNavy,
@@ -123,6 +122,15 @@ class KitSelectorChips extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (preset.isPinned) ...[
+                      Icon(
+                        Icons.push_pin_rounded,
+                        key: Key('preset_pin_badge_${preset.id}'),
+                        size: 13,
+                        color: isSelected ? RcTheme.textWhite : RcTheme.lockedGold,
+                      ),
+                      const SizedBox(width: 5),
+                    ],
                     Text(
                       preset.name,
                       style: TextStyle(
@@ -163,8 +171,8 @@ class KitSelectorChips extends StatelessWidget {
                       padding: EdgeInsets.zero,
                       onSelected: (action) {
                         switch (action) {
-                          case _PresetMenuAction.pinLeft:
-                            onPinPresetLeft(preset.id);
+                          case _PresetMenuAction.togglePin:
+                            onTogglePinPreset(preset.id);
                           case _PresetMenuAction.rename:
                             _showRenameDialog(context, preset);
                           case _PresetMenuAction.remove:
@@ -173,20 +181,23 @@ class KitSelectorChips extends StatelessWidget {
                       },
                       itemBuilder: (ctx) => [
                         PopupMenuItem<_PresetMenuAction>(
-                          value: _PresetMenuAction.pinLeft,
-                          enabled: !isLeftmost,
+                          value: _PresetMenuAction.togglePin,
                           child: Row(
                             children: [
                               Icon(
-                                Icons.push_pin_rounded,
+                                preset.isPinned
+                                    ? Icons.push_pin_outlined
+                                    : Icons.push_pin_rounded,
                                 size: 16,
-                                color: isLeftmost ? RcTheme.textMuted : RcTheme.accentCyan,
+                                color: preset.isPinned
+                                    ? RcTheme.lockedGold
+                                    : RcTheme.accentCyan,
                               ),
                               const SizedBox(width: 10),
                               Text(
-                                'Pin to Leftmost',
-                                style: TextStyle(
-                                  color: isLeftmost ? RcTheme.textMuted : RcTheme.textWhite,
+                                preset.isPinned ? 'Unpin' : 'Pin to Leftmost',
+                                style: const TextStyle(
+                                  color: RcTheme.textWhite,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                 ),
