@@ -312,4 +312,68 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byTooltip('Install App'), findsNothing);
   });
+
+  testWidgets('pins, renames, and removes built-in presets with confirmation and persistence', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: RcTheme.themeData,
+        home: CalculatorScreen(storage: storage),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Pin TT02 to leftmost
+    await tester.tap(find.byKey(const Key('preset_menu_tt02')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pin to Leftmost'));
+    await tester.pumpAndSettle();
+
+    final reordered = await storage.loadAllPresets();
+    expect(reordered.first.id, 'tt02');
+
+    // Rename TT02 to "My TT02"
+    await tester.tap(find.byKey(const Key('preset_menu_tt02')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rename'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('rename_preset_field')), 'My TT02');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('My TT02'), findsOneWidget);
+    expect(find.text('MY TT02'), findsOneWidget);
+
+    // Try removing My TT02, cancel first -> stays present
+    await tester.tap(find.byKey(const Key('preset_menu_tt02')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove'));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete My TT02?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('My TT02'), findsOneWidget);
+
+    // Confirm deleting My TT02 -> falls back to next preset (LC10B5)
+    await tester.tap(find.byKey(const Key('preset_menu_tt02')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('My TT02'), findsNothing);
+    expect(find.text('LC10B5'), findsWidgets);
+
+    // Rebuild CalculatorScreen -> TT02 stays removed
+    await tester.pumpWidget(
+      MaterialApp(
+        key: const ValueKey('reloaded_after_delete'),
+        theme: RcTheme.themeData,
+        home: CalculatorScreen(storage: storage),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('My TT02'), findsNothing);
+    expect(find.text('TT02'), findsNothing);
+  });
 }

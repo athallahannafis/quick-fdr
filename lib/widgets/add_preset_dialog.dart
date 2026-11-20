@@ -57,187 +57,210 @@ class _AddPresetDialogState extends State<AddPresetDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: RcTheme.surfaceNavy,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: RcTheme.elevatedNavy,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.tune_rounded, color: RcTheme.accentCyan, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Add New Kit Preset',
-                      style: TextStyle(
-                        color: RcTheme.textWhite,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Permanent Lock Notice Banner
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: RcTheme.lockedGold.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Header
+                  Row(
                     children: [
-                      Icon(Icons.lock_rounded, size: 16, color: RcTheme.lockedGold),
-                      SizedBox(width: 8),
-                      Expanded(
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: RcTheme.elevatedNavy,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.tune_rounded, color: RcTheme.accentCyan, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
                         child: Text(
-                          'Important: Internal Gear Ratio (IGR) is locked once created and cannot be edited later.',
+                          'Add New Kit Preset',
                           style: TextStyle(
-                            color: RcTheme.lockedGold,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            height: 1.3,
+                            color: RcTheme.textWhite,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 18),
+                  const SizedBox(height: 16),
 
-                // Kit Name Field
-                TextFormField(
-                  key: const Key('preset_name_field'),
-                  controller: _nameController,
-                  textCapitalization: TextCapitalization.words,
-                  style: const TextStyle(color: RcTheme.textWhite, fontWeight: FontWeight.bold),
-                  decoration: const InputDecoration(
-                    labelText: 'Kit / Chassis Name',
-                    hintText: 'e.g. Kyosho Fazer Mk2, Xray X4',
-                    prefixIcon: Icon(Icons.directions_car_rounded, color: RcTheme.textMuted, size: 20),
+                  // Permanent Lock Notice Banner
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: RcTheme.lockedGold.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.lock_rounded, size: 16, color: RcTheme.lockedGold),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Important: Internal Gear Ratio (IGR) is locked once created and cannot be edited later.',
+                            style: TextStyle(
+                              color: RcTheme.lockedGold,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a kit name';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 14),
+                  const SizedBox(height: 18),
 
-                // Internal Gear Ratio (IGR) Field
-                TextFormField(
-                  key: const Key('preset_igr_field'),
-                  controller: _igrController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-                  ],
-                  style: const TextStyle(color: RcTheme.textWhite, fontWeight: FontWeight.bold),
-                  decoration: const InputDecoration(
-                    labelText: 'Internal Gear Ratio (IGR)',
-                    hintText: 'e.g. 2.43 or 1.90',
-                    prefixIcon: Icon(Icons.lock_outline_rounded, color: RcTheme.lockedGold, size: 20),
-                    helperText: 'Chassis transmission differential ratio',
-                    helperStyle: TextStyle(color: RcTheme.textMuted, fontSize: 11),
+                  // Kit Name Field
+                  TextFormField(
+                    key: const Key('preset_name_field'),
+                    controller: _nameController,
+                    textCapitalization: TextCapitalization.words,
+                    style: const TextStyle(color: RcTheme.textWhite, fontWeight: FontWeight.bold),
+                    decoration: const InputDecoration(
+                      labelText: 'Kit / Chassis Name',
+                      hintText: 'e.g. Kyosho Fazer Mk2, Xray X4',
+                      prefixIcon: Icon(Icons.directions_car_rounded, color: RcTheme.textMuted, size: 20),
+                      errorMaxLines: 2,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter a kit name';
+                      }
+                      return null;
+                    },
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter IGR value';
-                    }
-                    final parsed = double.tryParse(value.trim());
-                    if (parsed == null || parsed <= 0) {
-                      return 'IGR must be a positive number';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 14),
+                  const SizedBox(height: 14),
 
-                // Stock Spur & Pinion Row
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        key: const Key('preset_spur_field'),
+                  // Internal Gear Ratio (IGR) Field
+                  TextFormField(
+                    key: const Key('preset_igr_field'),
+                    controller: _igrController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                    ],
+                    style: const TextStyle(color: RcTheme.textWhite, fontWeight: FontWeight.bold),
+                    decoration: const InputDecoration(
+                      labelText: 'Internal Gear Ratio (IGR)',
+                      hintText: 'e.g. 2.43 or 1.90',
+                      prefixIcon: Icon(Icons.lock_outline_rounded, color: RcTheme.lockedGold, size: 20),
+                      helperText: 'Chassis transmission differential ratio',
+                      helperStyle: TextStyle(color: RcTheme.textMuted, fontSize: 11),
+                      helperMaxLines: 2,
+                      errorMaxLines: 2,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter IGR value';
+                      }
+                      final parsed = double.tryParse(value.trim());
+                      if (parsed == null || parsed <= 0) {
+                        return 'IGR must be a positive number';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Stock Spur & Pinion (side-by-side on normal widths, stacked on narrow screens)
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final spurField = _buildToothField(
+                        fieldKey: const Key('preset_spur_field'),
                         controller: _spurController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        style: const TextStyle(color: RcTheme.textWhite, fontWeight: FontWeight.bold),
-                        decoration: const InputDecoration(
-                          labelText: 'Stock Spur',
-                          suffixText: 'T',
-                        ),
-                        validator: (value) {
-                          final parsed = int.tryParse(value ?? '');
-                          if (parsed == null || parsed <= 0) {
-                            return 'Min 1';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        key: const Key('preset_pinion_field'),
+                        labelText: 'Stock Spur',
+                      );
+                      final pinionField = _buildToothField(
+                        fieldKey: const Key('preset_pinion_field'),
                         controller: _pinionController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        style: const TextStyle(color: RcTheme.textWhite, fontWeight: FontWeight.bold),
-                        decoration: const InputDecoration(
-                          labelText: 'Stock Pinion',
-                          suffixText: 'T',
-                        ),
-                        validator: (value) {
-                          final parsed = int.tryParse(value ?? '');
-                          if (parsed == null || parsed <= 0) {
-                            return 'Min 1';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
+                        labelText: 'Stock Pinion',
+                      );
 
-                // Action Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel', style: TextStyle(color: RcTheme.textMuted)),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: _submit,
-                      child: const Text('Save Preset'),
-                    ),
-                  ],
-                ),
-              ],
+                      if (constraints.maxWidth < 260) {
+                        return Column(
+                          children: [
+                            spurField,
+                            const SizedBox(height: 14),
+                            pinionField,
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        children: [
+                          Expanded(child: spurField),
+                          const SizedBox(width: 12),
+                          Expanded(child: pinionField),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Action Buttons
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Cancel', style: TextStyle(color: RcTheme.textMuted)),
+                      ),
+                      ElevatedButton(
+                        onPressed: _submit,
+                        child: const Text('Save Preset'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildToothField({
+    required Key fieldKey,
+    required TextEditingController controller,
+    required String labelText,
+  }) {
+    return TextFormField(
+      key: fieldKey,
+      controller: controller,
+      keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      style: const TextStyle(color: RcTheme.textWhite, fontWeight: FontWeight.bold),
+      decoration: InputDecoration(
+        labelText: labelText,
+        suffixText: 'T',
+        errorMaxLines: 2,
+      ),
+      validator: (value) {
+        final parsed = int.tryParse(value ?? '');
+        if (parsed == null || parsed <= 0) {
+          return 'Min 1';
+        }
+        return null;
+      },
     );
   }
 }

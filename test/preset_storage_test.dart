@@ -67,7 +67,7 @@ void main() {
       expect(retrieved.isBuiltIn, false);
     });
 
-    test('deletes custom presets, but prevents deleting built-in presets', () async {
+    test('deletes both custom and built-in presets persistently', () async {
       const custom = CarPreset(
         id: 'to_delete',
         name: 'Delete Me',
@@ -81,17 +81,39 @@ void main() {
       var presets = await storage.loadAllPresets();
       expect(presets.length, 4);
 
-      // Successfully delete custom preset
+      // Delete custom preset
       await storage.deletePreset('to_delete');
       presets = await storage.loadAllPresets();
       expect(presets.length, 3);
       expect(presets.any((p) => p.id == 'to_delete'), isFalse);
 
-      // Attempting to delete built-in preset TT02 has no effect
+      // Delete built-in preset TT02
       await storage.deletePreset('tt02');
       presets = await storage.loadAllPresets();
-      expect(presets.length, 3);
-      expect(presets.any((p) => p.id == 'tt02'), isTrue);
+      expect(presets.length, 2);
+      expect(presets.any((p) => p.id == 'tt02'), isFalse);
+
+      // Deleting all remaining presets does not resurrect defaults
+      await storage.deletePreset('lc10b5');
+      await storage.deletePreset('ptg2r');
+      presets = await storage.loadAllPresets();
+      expect(presets, isEmpty);
+    });
+
+    test('renames built-in and custom presets while preserving IGR', () async {
+      await storage.renamePreset('tt02', 'Tamiya TT-02');
+      final presets = await storage.loadAllPresets();
+      final tt02 = presets.firstWhere((p) => p.id == 'tt02');
+      expect(tt02.name, 'Tamiya TT-02');
+      expect(tt02.igr, 2.60);
+      expect(tt02.defaultSpur, 70);
+      expect(tt02.defaultPinion, 22);
+    });
+
+    test('pins preset to leftmost position persistently', () async {
+      await storage.pinPresetToLeft('tt02');
+      final presets = await storage.loadAllPresets();
+      expect(presets.map((p) => p.id).toList(), ['tt02', 'lc10b5', 'ptg2r']);
     });
 
     test('stores and retrieves last selected kit ID', () async {

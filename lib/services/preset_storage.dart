@@ -4,6 +4,7 @@ import '../models/car_preset.dart';
 
 /// Storage service for loading and saving built-in and user-defined car presets.
 class PresetStorage {
+  static const String _presetsKey = 'car_presets';
   static const String _customPresetsKey = 'custom_car_presets';
   static const String _lastSelectedKey = 'last_selected_kit_id';
   static const String _kitGearsKeyPrefix = 'kit_gears_';
@@ -37,69 +38,90 @@ class PresetStorage {
     ),
   ];
 
-  /// Loads all presets combining the permanent built-in presets with saved custom ones.
-  Future<List<CarPreset>> loadAllPresets() async {
-    final prefs = await SharedPreferences.getInstance();
-    final customJsonList = prefs.getStringList(_customPresetsKey) ?? [];
-
-    final customPresets = <CarPreset>[];
-    for (final jsonStr in customJsonList) {
+  List<CarPreset> _decodePresets(List<String> jsonList) {
+    final presets = <CarPreset>[];
+    for (final jsonStr in jsonList) {
       try {
         final map = jsonDecode(jsonStr) as Map<String, dynamic>;
-        customPresets.add(CarPreset.fromJson(map));
+        presets.add(CarPreset.fromJson(map));
       } catch (_) {
         // Skip corrupt entry gracefully
       }
     }
-
-    return [...defaultPresets, ...customPresets];
+    return presets;
   }
 
-  /// Saves a new custom preset.
-  /// If the ID matches a built-in preset, the save is rejected.
+  Future<void> _savePresetsList(
+    SharedPreferences prefs,
+    List<CarPreset> presets,
+  ) async {
+    await prefs.setStringList(
+      _presetsKey,
+      presets.map((p) => jsonEncode(p.toJson())).toList(),
+    );
+  }
+
+  /// Loads all presets in their saved display order, seeding built-in defaults on first run.
+  Future<List<CarPreset>> loadAllPresets() async {
+    final prefs = await SharedPreferences.getInstance();
+    final storedJsonList = prefs.getStringList(_presetsKey);
+
+    if (storedJsonList == null) {
+      final legacyCustomList = prefs.getStringList(_customPresetsKey) ?? [];
+      final initial = [...defaultPresets, ..._decodePresets(legacyCustomList)];
+      await _savePresetsList(prefs, initial);
+      return initial;
+    }
+
+    return _decodePresets(storedJsonList);
+  }
+
+  /// Saves a new custom preset or updates an existing preset in place.
   Future<void> saveCustomPreset(CarPreset preset) async {
-    if (preset.isBuiltIn || defaultPresets.any((d) => d.id == preset.id)) {
-      return;
-    }
-
+    final presets = await loadAllPresets();
     final prefs = await SharedPreferences.getInstance();
-    final customJsonList = prefs.getStringList(_customPresetsKey) ?? [];
-
-    // Filter out existing preset with the same id if updating
-    final updatedList = customJsonList.where((jsonStr) {
-      try {
-        final map = jsonDecode(jsonStr) as Map<String, dynamic>;
-        return map['id'] != preset.id;
-      } catch (_) {
-        return false;
-      }
-    }).toList();
-
-    updatedList.add(jsonEncode(preset.toJson()));
-    await prefs.setStringList(_customPresetsKey, updatedList);
+    final index = presets.indexWhere((p) => p.id == preset.id);
+    if (index >= 0) {
+      presets[index] = preset;
+    } else {
+      presets.add(preset);
+    }
+    await _savePresetsList(prefs, presets);
   }
 
-  /// Deletes a custom preset by ID.
-  /// Built-in presets cannot be deleted.
+  /// Renames any preset (built-in or custom) while preserving its IGR and gear defaults.
+  Future<void> renamePreset(String id, String newName) async {
+    final trimmed = newName.trim();
+    if (trimmed.isEmpty) return;
+
+    final presets = await loadAllPresets();
+    final index = presets.indexWhere((p) => p.id == id);
+    if (index < 0) return;
+
+    presets[index] = presets[index].copyWith(name: trimmed);
+    final prefs = await SharedPreferences.getInstance();
+    await _savePresetsList(prefs, presets);
+  }
+
+  /// Pins any preset to the leftmost (first) position.
+  Future<void> pinPresetToLeft(String id) async {
+    final presets = await loadAllPresets();
+    final index = presets.indexWhere((p) => p.id == id);
+    if (index <= 0) return;
+
+    final target = presets.removeAt(index);
+    presets.insert(0, target);
+    final prefs = await SharedPreferences.getInstance();
+    await _savePresetsList(prefs, presets);
+  }
+
+  /// Deletes a preset by ID (built-in or custom) and clears its saved gear values.
   Future<void> deletePreset(String id) async {
-    if (defaultPresets.any((d) => d.id == id)) {
-      // Cannot delete built-in presets
-      return;
-    }
+    final presets = await loadAllPresets();
+    presets.removeWhere((p) => p.id == id);
 
     final prefs = await SharedPreferences.getInstance();
-    final customJsonList = prefs.getStringList(_customPresetsKey) ?? [];
-
-    final updatedList = customJsonList.where((jsonStr) {
-      try {
-        final map = jsonDecode(jsonStr) as Map<String, dynamic>;
-        return map['id'] != id;
-      } catch (_) {
-        return false;
-      }
-    }).toList();
-
-    await prefs.setStringList(_customPresetsKey, updatedList);
+    await _savePresetsList(prefs, presets);
     await prefs.remove('$_kitGearsKeyPrefix$id');
   }
 
@@ -151,6 +173,12 @@ class PresetStorage {
   Future<void> saveLastSelectedKitId(String id) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_lastSelectedKey, id);
+  }
+
+  /// Clears the last selected kit ID.
+  Future<void> clearLastSelectedKitId() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_lastSelectedKey);
   }
 
   /// Retrieves the last selected kit ID, or null if none saved.

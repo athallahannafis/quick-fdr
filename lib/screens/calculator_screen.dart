@@ -90,15 +90,17 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     final lastKitId = await _storage.getLastSelectedKitId();
     final savedGears = await _storage.loadAllKitGears(allPresets.map((p) => p.id));
 
-    CarPreset activeKit;
-    if (lastKitId != null && allPresets.any((p) => p.id == lastKitId)) {
-      activeKit = allPresets.firstWhere((p) => p.id == lastKitId);
-    } else {
-      // Default to TT02 if present, otherwise first available
-      activeKit = allPresets.firstWhere(
-        (p) => p.id == 'tt02',
-        orElse: () => allPresets.first,
-      );
+    CarPreset? activeKit;
+    if (allPresets.isNotEmpty) {
+      if (lastKitId != null && allPresets.any((p) => p.id == lastKitId)) {
+        activeKit = allPresets.firstWhere((p) => p.id == lastKitId);
+      } else {
+        // Default to TT02 if present, otherwise first available
+        activeKit = allPresets.firstWhere(
+          (p) => p.id == 'tt02',
+          orElse: () => allPresets.first,
+        );
+      }
     }
 
     if (mounted) {
@@ -107,7 +109,11 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         _savedGearsByKit
           ..clear()
           ..addAll(savedGears);
-        _applySelectedPreset(activeKit);
+        if (activeKit != null) {
+          _applySelectedPreset(activeKit);
+        } else {
+          _selectedPreset = null;
+        }
         _isLoading = false;
       });
     }
@@ -118,6 +124,30 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       _applySelectedPreset(preset);
     });
     _storage.saveLastSelectedKitId(preset.id);
+  }
+
+  Future<void> _onPinPresetLeft(String id) async {
+    await _storage.pinPresetToLeft(id);
+    final updated = await _storage.loadAllPresets();
+    if (!mounted) return;
+    setState(() {
+      _presets = updated;
+    });
+  }
+
+  Future<void> _onRenamePreset(String id, String newName) async {
+    await _storage.renamePreset(id, newName);
+    final updated = await _storage.loadAllPresets();
+    if (!mounted) return;
+    setState(() {
+      _presets = updated;
+      if (_selectedPreset?.id == id) {
+        final match = updated.where((p) => p.id == id);
+        if (match.isNotEmpty) {
+          _selectedPreset = match.first;
+        }
+      }
+    });
   }
 
   Future<void> _onAddPreset() async {
@@ -146,11 +176,17 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       _presets = updated;
       _savedGearsByKit.remove(id);
       if (_selectedPreset?.id == id) {
-        _applySelectedPreset(updated.first);
+        if (updated.isNotEmpty) {
+          _applySelectedPreset(updated.first);
+        } else {
+          _selectedPreset = null;
+        }
       }
     });
     if (_selectedPreset != null) {
       _storage.saveLastSelectedKitId(_selectedPreset!.id);
+    } else {
+      _storage.clearLastSelectedKitId();
     }
   }
 
@@ -197,7 +233,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading || _selectedPreset == null) {
+    if (_isLoading) {
       return const Scaffold(
         backgroundColor: RcTheme.backgroundNavy,
         body: Center(
@@ -206,12 +242,14 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       );
     }
 
-    final activeKit = _selectedPreset!;
-    final fdr = FdrCalculator.calculateFdr(
-      spur: _currentSpur,
-      pinion: _currentPinion,
-      igr: activeKit.igr,
-    );
+    final activeKit = _selectedPreset;
+    final fdr = activeKit == null
+        ? 0.0
+        : FdrCalculator.calculateFdr(
+            spur: _currentSpur,
+            pinion: _currentPinion,
+            igr: activeKit.igr,
+          );
     final fdrFormatted = FdrCalculator.formatFdr(fdr);
     final gearRatio = FdrCalculator.calculateGearRatio(
       spur: _currentSpur,
@@ -254,12 +292,12 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           IconButton(
             icon: const Icon(Icons.table_chart_rounded, color: RcTheme.accentCyan),
             tooltip: 'Pinion Matrix',
-            onPressed: _showPinionMatrix,
+            onPressed: activeKit == null ? null : _showPinionMatrix,
           ),
           IconButton(
             icon: const Icon(Icons.restart_alt_rounded, color: RcTheme.textMuted),
             tooltip: 'Reset to Kit Stock',
-            onPressed: _resetToStock,
+            onPressed: activeKit == null ? null : _resetToStock,
           ),
         ],
       ),
@@ -277,55 +315,94 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                 selectedPreset: activeKit,
                 onSelectPreset: _onSelectPreset,
                 onAddPreset: _onAddPreset,
+                onPinPresetLeft: _onPinPresetLeft,
+                onRenamePreset: _onRenamePreset,
                 onDeletePreset: _onDeletePreset,
               ),
               const SizedBox(height: 16),
 
-              // Main FDR Telemetry Card
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: FdrTelemetryCard(
-                  kitName: activeKit.name,
-                  igr: activeKit.igr,
-                  spur: _currentSpur,
-                  pinion: _currentPinion,
-                  fdr: fdr,
-                  fdrFormatted: fdrFormatted,
-                  gearRatio: gearRatio,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Gear Tuning Controls Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: [
-                    // Pinion Stepper (with +/- 1 and +/- 5 buttons)
-                    GearStepper(
-                      label: 'PINION GEAR',
-                      subtitle: 'Motor shaft gear',
-                      value: _currentPinion,
-                      minValue: _minPinion,
-                      maxValue: _maxPinion,
-                      stepIntervals: const [1, 5],
-                      onChanged: (val) => _updateCurrentGears(pinion: val),
+              if (activeKit == null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: RcTheme.surfaceNavy,
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    const SizedBox(height: 8),
-
-                    // Spur Stepper (with +/- 1 buttons, note rarely adjusted)
-                    GearStepper(
-                      label: 'SPUR GEAR',
-                      subtitle: 'Rarely adjusted',
-                      value: _currentSpur,
-                      minValue: 40,
-                      maxValue: 140,
-                      stepIntervals: const [1],
-                      onChanged: (val) => _updateCurrentGears(spur: val),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'No kit presets available.',
+                          style: TextStyle(
+                            color: RcTheme.textWhite,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Add a kit preset to calculate Final Drive Ratio.',
+                          style: TextStyle(color: RcTheme.textMuted, fontSize: 13),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: _onAddPreset,
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text('Add Kit'),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                )
+              else ...[
+                // Main FDR Telemetry Card
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: FdrTelemetryCard(
+                    kitName: activeKit.name,
+                    igr: activeKit.igr,
+                    spur: _currentSpur,
+                    pinion: _currentPinion,
+                    fdr: fdr,
+                    fdrFormatted: fdrFormatted,
+                    gearRatio: gearRatio,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 16),
+
+                // Gear Tuning Controls Section
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      // Pinion Stepper (with +/- 1 and +/- 5 buttons)
+                      GearStepper(
+                        label: 'PINION GEAR',
+                        subtitle: 'Motor shaft gear',
+                        value: _currentPinion,
+                        minValue: _minPinion,
+                        maxValue: _maxPinion,
+                        stepIntervals: const [1, 5],
+                        onChanged: (val) => _updateCurrentGears(pinion: val),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Spur Stepper (with +/- 1 buttons, note rarely adjusted)
+                      GearStepper(
+                        label: 'SPUR GEAR',
+                        subtitle: 'Rarely adjusted',
+                        value: _currentSpur,
+                        minValue: 40,
+                        maxValue: 140,
+                        stepIntervals: const [1],
+                        onChanged: (val) => _updateCurrentGears(spur: val),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),

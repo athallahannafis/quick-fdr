@@ -16,6 +16,10 @@ void main() {
     testWidgets('renders preset chips, highlights selected, and triggers callbacks', (WidgetTester tester) async {
       CarPreset selected = defaultPresets[2]; // TT02
       bool addTapped = false;
+      String? pinnedId;
+      String? renamedId;
+      String? renamedValue;
+      String? deletedId;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -34,7 +38,16 @@ void main() {
                   onAddPreset: () {
                     addTapped = true;
                   },
-                  onDeletePreset: (_) {},
+                  onPinPresetLeft: (id) {
+                    pinnedId = id;
+                  },
+                  onRenamePreset: (id, newName) {
+                    renamedId = id;
+                    renamedValue = newName;
+                  },
+                  onDeletePreset: (id) {
+                    deletedId = id;
+                  },
                 );
               },
             ),
@@ -42,11 +55,12 @@ void main() {
         ),
       );
 
-      // Verify all default preset names and Add Kit chip appear
+      // Verify all default preset names, Add Kit chip, and triple-dot menus appear
       expect(find.text('LC10B5'), findsOneWidget);
       expect(find.text('PTG2R'), findsOneWidget);
       expect(find.text('TT02'), findsOneWidget);
       expect(find.text('+ Add Kit'), findsOneWidget);
+      expect(find.byIcon(Icons.more_vert_rounded), findsNWidgets(3));
 
       // Tap LC10B5
       await tester.tap(find.text('LC10B5'));
@@ -57,6 +71,42 @@ void main() {
       await tester.tap(find.text('+ Add Kit'));
       await tester.pump();
       expect(addTapped, isTrue);
+
+      // Open TT02 menu and tap Pin to Leftmost
+      await tester.tap(find.byKey(const Key('preset_menu_tt02')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pin to Leftmost'));
+      await tester.pumpAndSettle();
+      expect(pinnedId, 'tt02');
+
+      // Open LC10B5 menu and Rename
+      await tester.tap(find.byKey(const Key('preset_menu_lc10b5')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Rename'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('rename_preset_field')), 'LC10B5 Pro');
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(renamedId, 'lc10b5');
+      expect(renamedValue, 'LC10B5 Pro');
+
+      // Open PTG2R menu, tap Remove, test Cancel first, then confirm Delete
+      await tester.tap(find.byKey(const Key('preset_menu_ptg2r')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete PTG2R?'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(deletedId, isNull);
+
+      await tester.tap(find.byKey(const Key('preset_menu_ptg2r')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+      expect(deletedId, 'ptg2r');
     });
   });
 
@@ -111,6 +161,42 @@ void main() {
       expect(createdPreset!.defaultSpur, 68);
       expect(createdPreset!.defaultPinion, 32);
       expect(createdPreset!.isBuiltIn, false);
+    });
+
+    testWidgets('renders without overflow on narrow 320px width screens', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: RcTheme.themeData,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return ElevatedButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => AddPresetDialog(
+                        onSave: (_) {},
+                      ),
+                    );
+                  },
+                  child: const Text('Open Dialog'),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Add New Kit Preset'), findsOneWidget);
+      expect(find.text('Save Preset'), findsOneWidget);
     });
   });
 }

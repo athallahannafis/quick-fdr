@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 import '../models/car_preset.dart';
 import '../theme/rc_theme.dart';
 
-/// Horizontal scrollable preset selector chips with kit name, IGR badge, and custom kit deletion.
+enum _PresetMenuAction {
+  pinLeft,
+  rename,
+  remove,
+}
+
+/// Horizontal scrollable preset selector chips with kit name, IGR badge, and per-preset menu.
 class KitSelectorChips extends StatelessWidget {
   final List<CarPreset> presets;
-  final CarPreset selectedPreset;
+  final CarPreset? selectedPreset;
   final ValueChanged<CarPreset> onSelectPreset;
   final VoidCallback onAddPreset;
+  final ValueChanged<String> onPinPresetLeft;
+  final void Function(String id, String newName) onRenamePreset;
   final ValueChanged<String> onDeletePreset;
 
   const KitSelectorChips({
@@ -16,6 +24,8 @@ class KitSelectorChips extends StatelessWidget {
     required this.selectedPreset,
     required this.onSelectPreset,
     required this.onAddPreset,
+    required this.onPinPresetLeft,
+    required this.onRenamePreset,
     required this.onDeletePreset,
   });
 
@@ -30,10 +40,14 @@ class KitSelectorChips extends StatelessWidget {
           ),
           title: Text(
             'Delete ${preset.name}?',
-            style: const TextStyle(color: RcTheme.textWhite, fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: RcTheme.textWhite,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           content: Text(
-            'Are you sure you want to delete this custom preset (${preset.name} with IGR ${preset.igr.toStringAsFixed(2)})?',
+            'Are you sure you want to delete this preset (${preset.name} with IGR ${preset.igr.toStringAsFixed(2)})?',
             style: const TextStyle(color: RcTheme.textMuted, fontSize: 14),
           ),
           actions: [
@@ -52,6 +66,16 @@ class KitSelectorChips extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  void _showRenameDialog(BuildContext context, CarPreset preset) {
+    showDialog(
+      context: context,
+      builder: (ctx) => _RenamePresetDialog(
+        initialName: preset.name,
+        onConfirm: (newName) => onRenamePreset(preset.id, newName),
+      ),
     );
   }
 
@@ -85,7 +109,8 @@ class KitSelectorChips extends StatelessWidget {
           }
 
           final preset = presets[index];
-          final isSelected = preset.id == selectedPreset.id;
+          final isSelected = selectedPreset?.id == preset.id;
+          final isLeftmost = index == 0;
 
           return Material(
             color: isSelected ? RcTheme.electricBlue : RcTheme.surfaceNavy,
@@ -94,14 +119,16 @@ class KitSelectorChips extends StatelessWidget {
               onTap: () => onSelectPreset(preset),
               borderRadius: BorderRadius.circular(24),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       preset.name,
                       style: TextStyle(
-                        color: isSelected ? RcTheme.textWhite : RcTheme.textWhite.withValues(alpha: 0.9),
+                        color: isSelected
+                            ? RcTheme.textWhite
+                            : RcTheme.textWhite.withValues(alpha: 0.9),
                         fontSize: 13,
                         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                       ),
@@ -110,7 +137,9 @@ class KitSelectorChips extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: isSelected ? RcTheme.backgroundNavy.withValues(alpha: 0.4) : RcTheme.elevatedNavy,
+                        color: isSelected
+                            ? RcTheme.backgroundNavy.withValues(alpha: 0.4)
+                            : RcTheme.elevatedNavy,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -122,21 +151,101 @@ class KitSelectorChips extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // Delete button for custom presets
-                    if (!preset.isBuiltIn) ...[
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () => _confirmDelete(context, preset),
-                        child: Padding(
-                          padding: const EdgeInsets.all(2.0),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 16,
-                            color: isSelected ? RcTheme.textWhite : RcTheme.textMuted,
+                    const SizedBox(width: 2),
+                    PopupMenuButton<_PresetMenuAction>(
+                      key: Key('preset_menu_${preset.id}'),
+                      tooltip: 'Preset options',
+                      color: RcTheme.surfaceNavy,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: const BorderSide(color: RcTheme.borderNavy),
+                      ),
+                      padding: EdgeInsets.zero,
+                      onSelected: (action) {
+                        switch (action) {
+                          case _PresetMenuAction.pinLeft:
+                            onPinPresetLeft(preset.id);
+                          case _PresetMenuAction.rename:
+                            _showRenameDialog(context, preset);
+                          case _PresetMenuAction.remove:
+                            _confirmDelete(context, preset);
+                        }
+                      },
+                      itemBuilder: (ctx) => [
+                        PopupMenuItem<_PresetMenuAction>(
+                          value: _PresetMenuAction.pinLeft,
+                          enabled: !isLeftmost,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.push_pin_rounded,
+                                size: 16,
+                                color: isLeftmost ? RcTheme.textMuted : RcTheme.accentCyan,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Pin to Leftmost',
+                                style: TextStyle(
+                                  color: isLeftmost ? RcTheme.textMuted : RcTheme.textWhite,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                        const PopupMenuItem<_PresetMenuAction>(
+                          value: _PresetMenuAction.rename,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.edit_rounded,
+                                size: 16,
+                                color: RcTheme.textWhite,
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                'Rename',
+                                style: TextStyle(
+                                  color: RcTheme.textWhite,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem<_PresetMenuAction>(
+                          value: _PresetMenuAction.remove,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.delete_outline_rounded,
+                                size: 16,
+                                color: RcTheme.dangerRed,
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                'Remove',
+                                style: TextStyle(
+                                  color: RcTheme.dangerRed,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.more_vert_rounded,
+                          size: 16,
+                          color: isSelected ? RcTheme.textWhite : RcTheme.textMuted,
+                        ),
                       ),
-                    ],
+                    ),
                   ],
                 ),
               ),
@@ -144,6 +253,91 @@ class KitSelectorChips extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _RenamePresetDialog extends StatefulWidget {
+  final String initialName;
+  final ValueChanged<String> onConfirm;
+
+  const _RenamePresetDialog({
+    required this.initialName,
+    required this.onConfirm,
+  });
+
+  @override
+  State<_RenamePresetDialog> createState() => _RenamePresetDialogState();
+}
+
+class _RenamePresetDialogState extends State<_RenamePresetDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialName);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_formKey.currentState?.validate() ?? false) {
+      widget.onConfirm(_controller.text.trim());
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: RcTheme.surfaceNavy,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: const Text(
+        'Rename Preset',
+        style: TextStyle(
+          color: RcTheme.textWhite,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      content: Form(
+        key: _formKey,
+        child: TextFormField(
+          key: const Key('rename_preset_field'),
+          controller: _controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          style: const TextStyle(color: RcTheme.textWhite, fontWeight: FontWeight.bold),
+          decoration: const InputDecoration(
+            labelText: 'Preset Name',
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter a preset name';
+            }
+            return null;
+          },
+          onFieldSubmitted: (_) => _submit(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel', style: TextStyle(color: RcTheme.textMuted)),
+        ),
+        ElevatedButton(
+          onPressed: _submit,
+          child: const Text('Save'),
+        ),
+      ],
     );
   }
 }
