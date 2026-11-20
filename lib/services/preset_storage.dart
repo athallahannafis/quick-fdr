@@ -6,6 +6,7 @@ import '../models/car_preset.dart';
 class PresetStorage {
   static const String _customPresetsKey = 'custom_car_presets';
   static const String _lastSelectedKey = 'last_selected_kit_id';
+  static const String _kitGearsKeyPrefix = 'kit_gears_';
 
   /// Default built-in presets required by specifications:
   /// LC10B5 (2.50 IGR), PTG2R (2.50 IGR), and TT02 (2.60 IGR).
@@ -99,6 +100,51 @@ class PresetStorage {
     }).toList();
 
     await prefs.setStringList(_customPresetsKey, updatedList);
+    await prefs.remove('$_kitGearsKeyPrefix$id');
+  }
+
+  /// Saves the current spur and pinion tooth counts for a specific kit preset.
+  Future<void> saveKitGears(
+    String kitId, {
+    required int spur,
+    required int pinion,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      '$_kitGearsKeyPrefix$kitId',
+      jsonEncode({'spur': spur, 'pinion': pinion}),
+    );
+  }
+
+  /// Loads saved spur and pinion tooth counts for the given kit IDs.
+  Future<Map<String, ({int spur, int pinion})>> loadAllKitGears(
+    Iterable<String> kitIds,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final result = <String, ({int spur, int pinion})>{};
+
+    for (final kitId in kitIds) {
+      final raw = prefs.getString('$_kitGearsKeyPrefix$kitId');
+      if (raw == null) continue;
+      try {
+        final map = jsonDecode(raw) as Map<String, dynamic>;
+        final spur = (map['spur'] as num).toInt();
+        final pinion = (map['pinion'] as num).toInt();
+        if (spur > 0 && pinion > 0) {
+          result[kitId] = (spur: spur, pinion: pinion);
+        }
+      } catch (_) {
+        // Skip corrupt entry gracefully
+      }
+    }
+
+    return result;
+  }
+
+  /// Clears saved spur and pinion tooth counts for a specific kit preset.
+  Future<void> clearKitGears(String kitId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('$_kitGearsKeyPrefix$kitId');
   }
 
   /// Saves the last selected kit ID.

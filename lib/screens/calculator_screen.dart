@@ -30,6 +30,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   late final PresetStorage _storage;
 
   List<CarPreset> _presets = [];
+  final Map<String, ({int spur, int pinion})> _savedGearsByKit = {};
   CarPreset? _selectedPreset;
   int _currentSpur = 70;
   int _currentPinion = 22;
@@ -42,9 +43,32 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     _initPresets();
   }
 
+  void _applySelectedPreset(CarPreset preset) {
+    final saved = _savedGearsByKit[preset.id];
+    _selectedPreset = preset;
+    _currentSpur = saved?.spur ?? preset.defaultSpur;
+    _currentPinion = saved?.pinion ?? preset.defaultPinion;
+  }
+
+  void _updateCurrentGears({int? spur, int? pinion}) {
+    final activeKit = _selectedPreset;
+    if (activeKit == null) return;
+
+    final nextSpur = spur ?? _currentSpur;
+    final nextPinion = pinion ?? _currentPinion;
+
+    setState(() {
+      _currentSpur = nextSpur;
+      _currentPinion = nextPinion;
+      _savedGearsByKit[activeKit.id] = (spur: nextSpur, pinion: nextPinion);
+    });
+    _storage.saveKitGears(activeKit.id, spur: nextSpur, pinion: nextPinion);
+  }
+
   Future<void> _initPresets() async {
     final allPresets = await _storage.loadAllPresets();
     final lastKitId = await _storage.getLastSelectedKitId();
+    final savedGears = await _storage.loadAllKitGears(allPresets.map((p) => p.id));
 
     CarPreset activeKit;
     if (lastKitId != null && allPresets.any((p) => p.id == lastKitId)) {
@@ -60,9 +84,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     if (mounted) {
       setState(() {
         _presets = allPresets;
-        _selectedPreset = activeKit;
-        _currentSpur = activeKit.defaultSpur;
-        _currentPinion = activeKit.defaultPinion;
+        _savedGearsByKit
+          ..clear()
+          ..addAll(savedGears);
+        _applySelectedPreset(activeKit);
         _isLoading = false;
       });
     }
@@ -70,9 +95,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
   void _onSelectPreset(CarPreset preset) {
     setState(() {
-      _selectedPreset = preset;
-      _currentSpur = preset.defaultSpur;
-      _currentPinion = preset.defaultPinion;
+      _applySelectedPreset(preset);
     });
     _storage.saveLastSelectedKitId(preset.id);
   }
@@ -84,11 +107,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         onSave: (newPreset) async {
           await _storage.saveCustomPreset(newPreset);
           final updated = await _storage.loadAllPresets();
+          if (!mounted) return;
           setState(() {
             _presets = updated;
-            _selectedPreset = newPreset;
-            _currentSpur = newPreset.defaultSpur;
-            _currentPinion = newPreset.defaultPinion;
+            _applySelectedPreset(newPreset);
           });
           _storage.saveLastSelectedKitId(newPreset.id);
         },
@@ -99,26 +121,32 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   Future<void> _onDeletePreset(String id) async {
     await _storage.deletePreset(id);
     final updated = await _storage.loadAllPresets();
+    if (!mounted) return;
     setState(() {
       _presets = updated;
+      _savedGearsByKit.remove(id);
       if (_selectedPreset?.id == id) {
-        _selectedPreset = updated.first;
-        _currentSpur = updated.first.defaultSpur;
-        _currentPinion = updated.first.defaultPinion;
+        _applySelectedPreset(updated.first);
       }
     });
+    if (_selectedPreset != null) {
+      _storage.saveLastSelectedKitId(_selectedPreset!.id);
+    }
   }
 
   void _resetToStock() {
-    if (_selectedPreset != null) {
+    final activeKit = _selectedPreset;
+    if (activeKit != null) {
       setState(() {
-        _currentSpur = _selectedPreset!.defaultSpur;
-        _currentPinion = _selectedPreset!.defaultPinion;
+        _currentSpur = activeKit.defaultSpur;
+        _currentPinion = activeKit.defaultPinion;
+        _savedGearsByKit.remove(activeKit.id);
       });
+      _storage.clearKitGears(activeKit.id);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Reset to ${_selectedPreset!.name} stock: ${_selectedPreset!.defaultSpur}T Spur, ${_selectedPreset!.defaultPinion}T Pinion',
+            'Reset to ${activeKit.name} stock: ${activeKit.defaultSpur}T Spur, ${activeKit.defaultPinion}T Pinion',
             style: const TextStyle(color: RcTheme.textWhite),
           ),
           backgroundColor: RcTheme.elevatedNavy,
@@ -141,9 +169,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         currentPinion: _currentPinion,
         minPinion: _minPinion,
         onSelectPinion: (newPinion) {
-          setState(() {
-            _currentPinion = newPinion.clamp(_minPinion, _maxPinion);
-          });
+          _updateCurrentGears(pinion: newPinion.clamp(_minPinion, _maxPinion));
         },
       ),
     );
@@ -257,11 +283,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                       minValue: _minPinion,
                       maxValue: _maxPinion,
                       stepIntervals: const [1, 5],
-                      onChanged: (val) {
-                        setState(() {
-                          _currentPinion = val;
-                        });
-                      },
+                      onChanged: (val) => _updateCurrentGears(pinion: val),
                     ),
                     const SizedBox(height: 8),
 
@@ -273,11 +295,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                       minValue: 40,
                       maxValue: 140,
                       stepIntervals: const [1],
-                      onChanged: (val) {
-                        setState(() {
-                          _currentSpur = val;
-                        });
-                      },
+                      onChanged: (val) => _updateCurrentGears(spur: val),
                     ),
                   ],
                 ),

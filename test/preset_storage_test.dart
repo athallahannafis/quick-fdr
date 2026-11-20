@@ -100,5 +100,38 @@ void main() {
       await storage.saveLastSelectedKitId('ptg2r');
       expect(await storage.getLastSelectedKitId(), 'ptg2r');
     });
+
+    test('saves, loads, and clears per-kit spur and pinion values', () async {
+      await storage.saveKitGears('tt02', spur: 74, pinion: 26);
+      await storage.saveKitGears('lc10b5', spur: 80, pinion: 21);
+
+      final loaded = await storage.loadAllKitGears(['tt02', 'lc10b5', 'ptg2r']);
+      expect(loaded['tt02'], (spur: 74, pinion: 26));
+      expect(loaded['lc10b5'], (spur: 80, pinion: 21));
+      expect(loaded.containsKey('ptg2r'), isFalse);
+
+      await storage.clearKitGears('tt02');
+      final afterClear = await storage.loadAllKitGears(['tt02', 'lc10b5']);
+      expect(afterClear.containsKey('tt02'), isFalse);
+      expect(afterClear['lc10b5'], (spur: 80, pinion: 21));
+    });
+
+    test('deletes saved kit gears when custom preset is deleted', () async {
+      const custom = CarPreset(
+        id: 'custom_gears',
+        name: 'Custom Car',
+        igr: 2.10,
+        defaultSpur: 72,
+        defaultPinion: 24,
+        isBuiltIn: false,
+      );
+
+      await storage.saveCustomPreset(custom);
+      await storage.saveKitGears('custom_gears', spur: 75, pinion: 28);
+      await storage.deletePreset('custom_gears');
+
+      final loaded = await storage.loadAllKitGears(['custom_gears']);
+      expect(loaded.containsKey('custom_gears'), isFalse);
+    });
   });
 }
