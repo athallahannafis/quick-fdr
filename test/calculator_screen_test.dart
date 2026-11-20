@@ -405,5 +405,10 @@ void main() {
     expect(presets.first.isPinned, isFalse);
     expect(find.byKey(Key('preset_pin_badge_${presets.first.id}')), findsNothing);
     expect(find.text('(80T / 25T) × 2.10 IGR'), findsOneWidget);
+    expect(
+      find.text('Added "Fresh Kit" kit preset (80T / 25T, 2.10 IGR)'),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
   });
 }

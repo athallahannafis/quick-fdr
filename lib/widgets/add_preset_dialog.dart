@@ -32,10 +32,14 @@ class _AddPresetDialogState extends State<AddPresetDialog> {
     super.dispose();
   }
 
+  double? _parseIgr(String raw) {
+    return double.tryParse(raw.trim().replaceAll(',', '.'));
+  }
+
   void _submit() {
     if (_formKey.currentState?.validate() ?? false) {
       final name = _nameController.text.trim();
-      final igr = double.parse(_igrController.text.trim());
+      final igr = _parseIgr(_igrController.text)!;
       final spur = int.parse(_spurController.text.trim());
       final pinion = int.parse(_pinionController.text.trim());
 
@@ -153,7 +157,7 @@ class _AddPresetDialogState extends State<AddPresetDialog> {
                     controller: _igrController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                      _DecimalInputFormatter(),
                     ],
                     style: const TextStyle(color: RcTheme.textWhite, fontWeight: FontWeight.bold),
                     decoration: const InputDecoration(
@@ -169,7 +173,7 @@ class _AddPresetDialogState extends State<AddPresetDialog> {
                       if (value == null || value.trim().isEmpty) {
                         return 'Please enter IGR value';
                       }
-                      final parsed = double.tryParse(value.trim());
+                      final parsed = _parseIgr(value);
                       if (parsed == null || parsed <= 0) {
                         return 'IGR must be a positive number';
                       }
@@ -261,6 +265,30 @@ class _AddPresetDialogState extends State<AddPresetDialog> {
         }
         return null;
       },
+    );
+  }
+}
+
+/// Accepts digits with a single decimal separator (`.` or `,`), normalizing `,` to `.`
+/// for iOS/locale decimal keyboards that emit commas.
+class _DecimalInputFormatter extends TextInputFormatter {
+  static final RegExp _validDecimal = RegExp(r'^\d*\.?\d*$');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final normalized = newValue.text.replaceAll(',', '.');
+    if (!_validDecimal.hasMatch(normalized)) {
+      return oldValue;
+    }
+    if (normalized == newValue.text) {
+      return newValue;
+    }
+    return newValue.copyWith(
+      text: normalized,
+      composing: TextRange.empty,
     );
   }
 }

@@ -168,6 +168,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             _applySelectedPreset(newPreset);
           });
           _storage.saveLastSelectedKitId(newPreset.id);
+          _showSnackBar(
+            'Added "${newPreset.name}" kit preset (${newPreset.defaultSpur}T / ${newPreset.defaultPinion}T, ${newPreset.igr.toStringAsFixed(2)} IGR)',
+            icon: Icons.check_circle_rounded,
+          );
         },
       ),
     );
@@ -195,6 +199,40 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     }
   }
 
+  void _showSnackBar(
+    String message, {
+    IconData? icon,
+    Duration duration = const Duration(seconds: 2),
+  }) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: RcTheme.elevatedNavy,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: RcTheme.borderNavy),
+          ),
+          duration: duration,
+          content: Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, color: RcTheme.accentCyan, size: 18),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(color: RcTheme.textWhite),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+  }
+
   void _resetToStock() {
     final activeKit = _selectedPreset;
     if (activeKit != null) {
@@ -204,15 +242,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         _savedGearsByKit.remove(activeKit.id);
       });
       _storage.clearKitGears(activeKit.id);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Reset to ${activeKit.name} stock: ${activeKit.defaultSpur}T Spur, ${activeKit.defaultPinion}T Pinion',
-            style: const TextStyle(color: RcTheme.textWhite),
-          ),
-          backgroundColor: RcTheme.elevatedNavy,
-          duration: const Duration(seconds: 1),
-        ),
+      _showSnackBar(
+        'Reset to ${activeKit.name} stock: ${activeKit.defaultSpur}T Spur, ${activeKit.defaultPinion}T Pinion',
+        duration: const Duration(seconds: 1),
       );
     }
   }

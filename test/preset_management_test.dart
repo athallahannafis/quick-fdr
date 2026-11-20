@@ -164,6 +164,54 @@ void main() {
       expect(createdPreset!.isBuiltIn, false);
     });
 
+    testWidgets('normalizes comma decimal input to dot and rejects extra separators', (WidgetTester tester) async {
+      CarPreset? createdPreset;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: RcTheme.themeData,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return ElevatedButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => AddPresetDialog(
+                        onSave: (preset) {
+                          createdPreset = preset;
+                        },
+                      ),
+                    );
+                  },
+                  child: const Text('Open Dialog'),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byKey(const Key('preset_name_field')), 'Xray X4');
+      await tester.enterText(find.byKey(const Key('preset_igr_field')), '2,43');
+      await tester.pump();
+      expect(find.text('2.43'), findsOneWidget);
+
+      // Extra decimal separators should be rejected
+      await tester.enterText(find.byKey(const Key('preset_igr_field')), '2.4.3');
+      await tester.pump();
+      expect(find.text('2.43'), findsOneWidget);
+
+      await tester.tap(find.text('Save Preset'));
+      await tester.pumpAndSettle();
+
+      expect(createdPreset, isNotNull);
+      expect(createdPreset!.igr, 2.43);
+    });
+
     testWidgets('renders without overflow on narrow 320px width screens', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(320, 568);
       tester.view.devicePixelRatio = 1.0;
