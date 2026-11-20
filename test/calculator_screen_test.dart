@@ -252,9 +252,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Add a custom preset
-    await tester.ensureVisible(find.text('Add Kit'));
-    await tester.tap(find.text('Add Kit'));
+    // Add a custom preset from the top-left AppBar button (no Add Kit chip in preset row)
+    expect(find.text('Add Kit'), findsNothing);
+    await tester.tap(find.byTooltip('Add Kit Preset'));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(const Key('preset_name_field')), 'Xray X4');
@@ -281,7 +281,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('(70T / 22T) × 2.60 IGR'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Xray X4').first);
+    await tester.drag(find.byType(ListView).first, const Offset(300, 0));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Xray X4').first);
     await tester.pumpAndSettle();
     expect(find.text('(89T / 31T) × 1.90 IGR'), findsOneWidget);
@@ -395,5 +396,31 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('My TT02'), findsNothing);
     expect(find.text('TT02'), findsNothing);
+  });
+
+  testWidgets('adds new preset from top-left AppBar button and puts it leftmost without pinning', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: RcTheme.themeData,
+        home: CalculatorScreen(storage: storage),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Add Kit Preset'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('preset_name_field')), 'Fresh Kit');
+    await tester.enterText(find.byKey(const Key('preset_igr_field')), '2.10');
+    await tester.enterText(find.byKey(const Key('preset_spur_field')), '80');
+    await tester.enterText(find.byKey(const Key('preset_pinion_field')), '25');
+    await tester.tap(find.text('Save Preset'));
+    await tester.pumpAndSettle();
+
+    final presets = await storage.loadAllPresets();
+    expect(presets.first.name, 'Fresh Kit');
+    expect(presets.first.isPinned, isFalse);
+    expect(find.byKey(Key('preset_pin_badge_${presets.first.id}')), findsNothing);
+    expect(find.text('(80T / 25T) × 2.10 IGR'), findsOneWidget);
   });
 }

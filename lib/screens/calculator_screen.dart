@@ -265,6 +265,11 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     return Scaffold(
       backgroundColor: RcTheme.backgroundNavy,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.add_rounded, color: RcTheme.accentCyan),
+          tooltip: 'Add Kit Preset',
+          onPressed: _onAddPreset,
+        ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -320,7 +325,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                 presets: _presets,
                 selectedPreset: activeKit,
                 onSelectPreset: _onSelectPreset,
-                onAddPreset: _onAddPreset,
                 onTogglePinPreset: _onTogglePinPreset,
                 onRenamePreset: _onRenamePreset,
                 onDeletePreset: _onDeletePreset,

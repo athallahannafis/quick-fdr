@@ -15,7 +15,6 @@ void main() {
   group('KitSelectorChips Widget', () {
     testWidgets('renders preset chips, flagged pin badges, and triggers callbacks', (WidgetTester tester) async {
       CarPreset selected = defaultPresets[2]; // TT02
-      bool addTapped = false;
       String? toggledPinId;
       String? renamedId;
       String? renamedValue;
@@ -34,9 +33,6 @@ void main() {
                     setState(() {
                       selected = preset;
                     });
-                  },
-                  onAddPreset: () {
-                    addTapped = true;
                   },
                   onTogglePinPreset: (id) {
                     toggledPinId = id;
@@ -59,7 +55,7 @@ void main() {
       expect(find.text('LC10B5'), findsOneWidget);
       expect(find.text('PTG2R'), findsOneWidget);
       expect(find.text('TT02'), findsOneWidget);
-      expect(find.text('Add Kit'), findsOneWidget);
+      expect(find.text('Add Kit'), findsNothing);
       expect(find.byKey(const Key('preset_pin_badge_lc10b5')), findsOneWidget);
       expect(find.byKey(const Key('preset_pin_badge_ptg2r')), findsNothing);
       expect(find.byKey(const Key('preset_pin_badge_tt02')), findsNothing);
@@ -69,11 +65,6 @@ void main() {
       await tester.tap(find.text('LC10B5'));
       await tester.pump();
       expect(selected.id, 'lc10b5');
-
-      // Tap Add Kit
-      await tester.tap(find.text('Add Kit'));
-      await tester.pump();
-      expect(addTapped, isTrue);
 
       // Open pinned LC10B5 menu -> shows "Unpin"
       await tester.tap(find.byKey(const Key('preset_menu_lc10b5')));

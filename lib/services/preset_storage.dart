@@ -86,7 +86,7 @@ class PresetStorage {
     return _normalizePinOrder(_decodePresets(storedJsonList));
   }
 
-  /// Saves a new custom preset or updates an existing preset in place.
+  /// Saves a new custom preset at the leftmost unpinned position, or updates an existing preset in place.
   Future<void> saveCustomPreset(CarPreset preset) async {
     final presets = await loadAllPresets();
     final prefs = await SharedPreferences.getInstance();
@@ -94,7 +94,9 @@ class PresetStorage {
     if (index >= 0) {
       presets[index] = preset;
     } else {
-      presets.add(preset);
+      final firstUnpinned = presets.indexWhere((p) => !p.isPinned);
+      final insertIndex = firstUnpinned == -1 ? presets.length : firstUnpinned;
+      presets.insert(insertIndex, preset);
     }
     await _savePresetsList(prefs, _normalizePinOrder(presets));
   }

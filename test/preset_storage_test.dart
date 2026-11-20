@@ -120,7 +120,7 @@ void main() {
       expect(presets[1].isPinned, isTrue);
       expect(presets[2].isPinned, isFalse);
 
-      // Adding a new unpinned custom preset places it after all pinned presets
+      // Adding a new unpinned custom preset places it leftmost among unpinned presets (after pinned ones)
       const custom = CarPreset(
         id: 'custom_x4',
         name: 'Xray X4',
@@ -131,14 +131,31 @@ void main() {
       );
       await storage.saveCustomPreset(custom);
       presets = await storage.loadAllPresets();
-      expect(presets.map((p) => p.id).toList(), ['tt02', 'ptg2r', 'lc10b5', 'custom_x4']);
+      expect(presets.map((p) => p.id).toList(), ['tt02', 'ptg2r', 'custom_x4', 'lc10b5']);
+      expect(presets[2].isPinned, isFalse);
 
       // Unpin TT02 -> PTG2R remains leftmost pinned, TT02 moves to unpinned section
       await storage.togglePinPreset('tt02');
       presets = await storage.loadAllPresets();
-      expect(presets.map((p) => p.id).toList(), ['ptg2r', 'tt02', 'lc10b5', 'custom_x4']);
+      expect(presets.map((p) => p.id).toList(), ['ptg2r', 'tt02', 'custom_x4', 'lc10b5']);
       expect(presets[0].isPinned, isTrue);
       expect(presets[1].isPinned, isFalse);
+    });
+
+    test('places newest unpinned preset at leftmost when no presets are pinned', () async {
+      const custom = CarPreset(
+        id: 'custom_newest',
+        name: 'Newest Car',
+        igr: 2.20,
+        defaultSpur: 72,
+        defaultPinion: 24,
+        isBuiltIn: false,
+      );
+
+      await storage.saveCustomPreset(custom);
+      final presets = await storage.loadAllPresets();
+      expect(presets.first.id, 'custom_newest');
+      expect(presets.first.isPinned, isFalse);
     });
 
     test('stores and retrieves last selected kit ID', () async {

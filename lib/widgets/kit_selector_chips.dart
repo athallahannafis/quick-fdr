@@ -9,11 +9,10 @@ enum _PresetMenuAction {
 }
 
 /// Horizontal scrollable preset selector chips with kit name, IGR badge, pin flag, and per-preset menu.
-class KitSelectorChips extends StatelessWidget {
+class KitSelectorChips extends StatefulWidget {
   final List<CarPreset> presets;
   final CarPreset? selectedPreset;
   final ValueChanged<CarPreset> onSelectPreset;
-  final VoidCallback onAddPreset;
   final ValueChanged<String> onTogglePinPreset;
   final void Function(String id, String newName) onRenamePreset;
   final ValueChanged<String> onDeletePreset;
@@ -23,11 +22,39 @@ class KitSelectorChips extends StatelessWidget {
     required this.presets,
     required this.selectedPreset,
     required this.onSelectPreset,
-    required this.onAddPreset,
     required this.onTogglePinPreset,
     required this.onRenamePreset,
     required this.onDeletePreset,
   });
+
+  @override
+  State<KitSelectorChips> createState() => _KitSelectorChipsState();
+}
+
+class _KitSelectorChipsState extends State<KitSelectorChips> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void didUpdateWidget(covariant KitSelectorChips oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.presets.length > oldWidget.presets.length && _scrollController.hasClients) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            0,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   void _confirmDelete(BuildContext context, CarPreset preset) {
     showDialog(
@@ -59,7 +86,7 @@ class KitSelectorChips extends StatelessWidget {
               style: ElevatedButton.styleFrom(backgroundColor: RcTheme.dangerRed),
               onPressed: () {
                 Navigator.of(ctx).pop();
-                onDeletePreset(preset.id);
+                widget.onDeletePreset(preset.id);
               },
               child: const Text('Delete'),
             ),
@@ -74,7 +101,7 @@ class KitSelectorChips extends StatelessWidget {
       context: context,
       builder: (ctx) => _RenamePresetDialog(
         initialName: preset.name,
-        onConfirm: (newName) => onRenamePreset(preset.id, newName),
+        onConfirm: (newName) => widget.onRenamePreset(preset.id, newName),
       ),
     );
   }
@@ -84,38 +111,20 @@ class KitSelectorChips extends StatelessWidget {
     return SizedBox(
       height: 48,
       child: ListView.separated(
+        controller: _scrollController,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: presets.length + 1,
+        itemCount: widget.presets.length,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          // "Add Kit" action chip at the end
-          if (index == presets.length) {
-            return ActionChip(
-              avatar: const Icon(Icons.add_rounded, size: 18, color: RcTheme.accentCyan),
-              label: const Text(
-                'Add Kit',
-                style: TextStyle(
-                  color: RcTheme.accentCyan,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              backgroundColor: RcTheme.surfaceNavy,
-              side: BorderSide.none,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              onPressed: onAddPreset,
-            );
-          }
-
-          final preset = presets[index];
-          final isSelected = selectedPreset?.id == preset.id;
+          final preset = widget.presets[index];
+          final isSelected = widget.selectedPreset?.id == preset.id;
 
           return Material(
             color: isSelected ? RcTheme.electricBlue : RcTheme.surfaceNavy,
             borderRadius: BorderRadius.circular(24),
             child: InkWell(
-              onTap: () => onSelectPreset(preset),
+              onTap: () => widget.onSelectPreset(preset),
               borderRadius: BorderRadius.circular(24),
               child: Container(
                 padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
@@ -172,7 +181,7 @@ class KitSelectorChips extends StatelessWidget {
                       onSelected: (action) {
                         switch (action) {
                           case _PresetMenuAction.togglePin:
-                            onTogglePinPreset(preset.id);
+                            widget.onTogglePinPreset(preset.id);
                           case _PresetMenuAction.rename:
                             _showRenameDialog(context, preset);
                           case _PresetMenuAction.remove:
