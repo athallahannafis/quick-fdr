@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/car_preset.dart';
 import '../services/preset_storage.dart';
+import '../services/pwa_install_client.dart';
 import '../theme/rc_theme.dart';
 import '../utils/fdr_calculator.dart';
 import '../widgets/add_preset_dialog.dart';
@@ -13,10 +14,12 @@ import '../widgets/rc_gear_logo.dart';
 /// Main interactive screen for Quick FDR calculator.
 class CalculatorScreen extends StatefulWidget {
   final PresetStorage? storage;
+  final PwaInstallClient? pwaInstallClient;
 
   const CalculatorScreen({
     super.key,
     this.storage,
+    this.pwaInstallClient,
   });
 
   @override
@@ -28,6 +31,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   static const int _maxPinion = 80;
 
   late final PresetStorage _storage;
+  late final PwaInstallClient _pwaInstallClient;
 
   List<CarPreset> _presets = [];
   final Map<String, ({int spur, int pinion})> _savedGearsByKit = {};
@@ -35,12 +39,28 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   int _currentSpur = 70;
   int _currentPinion = 22;
   bool _isLoading = true;
+  bool _canInstallPwa = false;
 
   @override
   void initState() {
     super.initState();
     _storage = widget.storage ?? PresetStorage();
+    _pwaInstallClient = widget.pwaInstallClient ?? createPwaInstallClient();
+    _canInstallPwa = _pwaInstallClient.canInstall;
+    _pwaInstallClient.setOnInstalled(() {
+      if (mounted) {
+        setState(() {
+          _canInstallPwa = false;
+        });
+      }
+    });
     _initPresets();
+  }
+
+  @override
+  void dispose() {
+    _pwaInstallClient.setOnInstalled(null);
+    super.dispose();
   }
 
   void _applySelectedPreset(CarPreset preset) {
@@ -225,6 +245,12 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           ],
         ),
         actions: [
+          if (_canInstallPwa)
+            IconButton(
+              icon: const Icon(Icons.install_mobile_rounded, color: RcTheme.accentCyan),
+              tooltip: 'Install App',
+              onPressed: _pwaInstallClient.triggerInstall,
+            ),
           IconButton(
             icon: const Icon(Icons.table_chart_rounded, color: RcTheme.accentCyan),
             tooltip: 'Pinion Matrix',

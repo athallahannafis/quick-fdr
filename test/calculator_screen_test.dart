@@ -2,8 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:quick_fdr/services/preset_storage.dart';
+import 'package:quick_fdr/services/pwa_install_client.dart';
 import 'package:quick_fdr/theme/rc_theme.dart';
 import 'package:quick_fdr/screens/calculator_screen.dart';
+
+class _FakePwaInstallClient implements PwaInstallClient {
+  @override
+  bool canInstall;
+  int triggerCount = 0;
+  void Function()? onInstalled;
+
+  _FakePwaInstallClient({this.canInstall = false});
+
+  @override
+  void triggerInstall() {
+    triggerCount++;
+  }
+
+  @override
+  void setOnInstalled(void Function()? callback) {
+    onInstalled = callback;
+  }
+
+  void simulateInstalled() {
+    canInstall = false;
+    onInstalled?.call();
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -260,5 +285,31 @@ void main() {
     await tester.tap(find.text('Xray X4').first);
     await tester.pumpAndSettle();
     expect(find.text('(89T / 31T) × 1.90 IGR'), findsOneWidget);
+  });
+
+  testWidgets('shows Install App shortcut next to Pinion Matrix when installable and hides after install', (WidgetTester tester) async {
+    final pwaClient = _FakePwaInstallClient(canInstall: true);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: RcTheme.themeData,
+        home: CalculatorScreen(
+          storage: storage,
+          pwaInstallClient: pwaClient,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final installButton = find.byTooltip('Install App');
+    expect(installButton, findsOneWidget);
+
+    await tester.tap(installButton);
+    await tester.pump();
+    expect(pwaClient.triggerCount, 1);
+
+    pwaClient.simulateInstalled();
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Install App'), findsNothing);
   });
 }

@@ -34,8 +34,91 @@
 
   <title>Quick FDR</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    #pwa-install-banner {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      z-index: 2147483647;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 12px 14px;
+      background: #1C2541;
+      color: #FFFFFF;
+      border: 1px solid #2C3E6B;
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #pwa-install-banner.visible {
+      display: flex;
+    }
+    #pwa-install-banner img {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    #pwa-install-text {
+      flex: 1;
+      min-width: 0;
+    }
+    #pwa-install-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #FFFFFF;
+      line-height: 1.25;
+    }
+    #pwa-install-subtitle {
+      margin-top: 2px;
+      font-size: 12px;
+      color: #8D99AE;
+      line-height: 1.35;
+    }
+    #pwa-install-subtitle strong {
+      color: #00E5FF;
+      font-weight: 600;
+    }
+    #pwa-install-action {
+      border: none;
+      border-radius: 10px;
+      padding: 8px 14px;
+      background: #3A86FF;
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    #pwa-install-action[hidden] {
+      display: none;
+    }
+    #pwa-install-close {
+      border: none;
+      background: transparent;
+      color: #8D99AE;
+      font-size: 18px;
+      line-height: 1;
+      padding: 4px 6px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+  </style>
 </head>
 <body style="background-color: #0B132B;">
+  <div id="pwa-install-banner" role="dialog" aria-label="Install Quick FDR">
+    <img src="icons/Icon-192.png" alt="Quick FDR icon" />
+    <div id="pwa-install-text">
+      <div id="pwa-install-title">Install Quick FDR</div>
+      <div id="pwa-install-subtitle"></div>
+    </div>
+    <button id="pwa-install-action" type="button" hidden>Install</button>
+    <button id="pwa-install-close" type="button" aria-label="Dismiss install prompt">&times;</button>
+  </div>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
@@ -64,6 +147,149 @@
             });
       });
     }
+
+    (function () {
+      const DISMISS_KEY = 'quick_fdr_install_dismissed_at';
+      const DISMISS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+      const banner = document.getElementById('pwa-install-banner');
+      const subtitle = document.getElementById('pwa-install-subtitle');
+      const actionBtn = document.getElementById('pwa-install-action');
+      const closeBtn = document.getElementById('pwa-install-close');
+
+      const isStandalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true;
+
+      if (isStandalone) return;
+
+      let dismissedAt = 0;
+      try {
+        dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || 0);
+      } catch (_) {}
+      if (dismissedAt && Date.now() - dismissedAt < DISMISS_TTL_MS) {
+        return;
+      }
+
+      const isIos =
+        /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isAndroid = /android/i.test(navigator.userAgent);
+
+      let deferredPrompt = null;
+      let fallbackTimer = null;
+      let onInstalledCallback = null;
+
+      function checkStandalone() {
+        return (
+          window.matchMedia('(display-mode: standalone)').matches ||
+          window.navigator.standalone === true
+        );
+      }
+
+      function showInstructionsBanner() {
+        if (isIos) {
+          subtitle.innerHTML = 'Tap <strong>Share</strong> then <strong>Add to Home Screen</strong> for offline access.';
+        } else if (isAndroid) {
+          subtitle.innerHTML = 'Tap browser <strong>menu (&#8942;)</strong> then <strong>Install app</strong> for offline access.';
+        } else {
+          subtitle.innerHTML = 'Click the <strong>Install</strong> icon in your browser address bar or menu.';
+        }
+        actionBtn.hidden = true;
+        banner.classList.add('visible');
+      }
+
+      window.quickFdrPwaCanShow = function () {
+        return !checkStandalone();
+      };
+
+      window.quickFdrPwaSetOnInstalled = function (cb) {
+        onInstalledCallback = typeof cb === 'function' ? cb : null;
+      };
+
+      window.quickFdrPwaTriggerInstall = async function () {
+        if (checkStandalone()) return;
+        try {
+          localStorage.removeItem(DISMISS_KEY);
+        } catch (_) {}
+
+        if (deferredPrompt) {
+          const promptEvent = deferredPrompt;
+          deferredPrompt = null;
+          promptEvent.prompt();
+          const choice = await promptEvent.userChoice;
+          if (choice && choice.outcome === 'accepted') {
+            hideBanner(false);
+          } else {
+            showInstructionsBanner();
+          }
+          return;
+        }
+
+        showInstructionsBanner();
+      };
+
+      function hideBanner(persistDismiss) {
+        if (fallbackTimer) {
+          clearTimeout(fallbackTimer);
+          fallbackTimer = null;
+        }
+        banner.classList.remove('visible');
+        if (persistDismiss) {
+          try {
+            localStorage.setItem(DISMISS_KEY, String(Date.now()));
+          } catch (_) {}
+        }
+      }
+
+      closeBtn.addEventListener('click', function () {
+        hideBanner(true);
+      });
+
+      window.addEventListener('beforeinstallprompt', function (event) {
+        event.preventDefault();
+        deferredPrompt = event;
+        if (fallbackTimer) {
+          clearTimeout(fallbackTimer);
+          fallbackTimer = null;
+        }
+        if (checkStandalone()) return;
+
+        subtitle.textContent = 'Add to your home screen for offline pit-bench use.';
+        actionBtn.hidden = false;
+        banner.classList.add('visible');
+      });
+
+      actionBtn.addEventListener('click', async function () {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        if (choice && choice.outcome === 'accepted') {
+          hideBanner(false);
+        } else {
+          hideBanner(true);
+        }
+      });
+
+      window.addEventListener('appinstalled', function () {
+        deferredPrompt = null;
+        hideBanner(false);
+        if (onInstalledCallback) {
+          onInstalledCallback();
+        }
+      });
+
+      if (isIos) {
+        showInstructionsBanner();
+      } else if (isAndroid) {
+        // Fallback when Chrome suppresses beforeinstallprompt or in browsers without it
+        fallbackTimer = setTimeout(function () {
+          if (deferredPrompt) return;
+          showInstructionsBanner();
+        }, 1500);
+      }
+    })();
   </script>
 </body>
 </html>
