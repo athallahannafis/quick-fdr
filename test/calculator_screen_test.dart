@@ -81,18 +81,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('8.48'), findsOneWidget);
-
-    // Open Pinion Matrix
-    await tester.tap(find.byTooltip('Pinion Matrix'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('PINION FDR MATRIX'), findsOneWidget);
-
-    // Close Pinion Matrix
-    await tester.tap(find.byIcon(Icons.close_rounded));
-    await tester.pumpAndSettle();
-
-    expect(find.text('PINION FDR MATRIX'), findsNothing);
+    expect(find.byTooltip('Pinion Matrix'), findsNothing);
   });
 
   testWidgets('allows pinion down to 6T and clamps below 6T', (WidgetTester tester) async {
@@ -126,12 +115,6 @@ void main() {
     await tester.tap(find.text('-5').first);
     await tester.pumpAndSettle();
     expect(find.text('6'), findsOneWidget);
-
-    // Pinion Matrix should start at 6T and not show 5T
-    await tester.tap(find.byTooltip('Pinion Matrix'));
-    await tester.pumpAndSettle();
-    expect(find.text('6 T'), findsOneWidget);
-    expect(find.text('5 T'), findsNothing);
   });
 
   testWidgets('preserves updated pinion and spur values across kit tab switches', (WidgetTester tester) async {
@@ -214,12 +197,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Update TT02 via Pinion Matrix and Spur direct-input dialog
-    await tester.tap(find.byTooltip('Pinion Matrix'));
+    // Update TT02 via Pinion and Spur direct-input dialogs
+    await tester.ensureVisible(find.text('22'));
+    await tester.tap(find.text('22'));
     await tester.pumpAndSettle();
-    await tester.drag(find.byType(ListView).last, const Offset(0, -150));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('25 T'));
+    await tester.enterText(find.byType(TextField), '25');
+    await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('70'));
@@ -288,7 +271,7 @@ void main() {
     expect(find.text('(89T / 31T) × 1.90 IGR'), findsOneWidget);
   });
 
-  testWidgets('shows Install App shortcut next to Pinion Matrix when installable and hides after install', (WidgetTester tester) async {
+  testWidgets('shows Install App shortcut in AppBar when installable and hides after install', (WidgetTester tester) async {
     final pwaClient = _FakePwaInstallClient(canInstall: true);
 
     await tester.pumpWidget(

@@ -8,7 +8,6 @@ import '../widgets/add_preset_dialog.dart';
 import '../widgets/fdr_telemetry_card.dart';
 import '../widgets/gear_stepper.dart';
 import '../widgets/kit_selector_chips.dart';
-import '../widgets/pinion_matrix_sheet.dart';
 import '../widgets/rc_gear_logo.dart';
 
 /// Main interactive screen for Quick FDR calculator.
@@ -218,25 +217,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     }
   }
 
-  void _showPinionMatrix() {
-    if (_selectedPreset == null) return;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => PinionMatrixSheet(
-        kitName: _selectedPreset!.name,
-        igr: _selectedPreset!.igr,
-        currentSpur: _currentSpur,
-        currentPinion: _currentPinion,
-        minPinion: _minPinion,
-        onSelectPinion: (newPinion) {
-          _updateCurrentGears(pinion: newPinion.clamp(_minPinion, _maxPinion));
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -300,11 +280,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               tooltip: 'Install App',
               onPressed: _pwaInstallClient.triggerInstall,
             ),
-          IconButton(
-            icon: const Icon(Icons.table_chart_rounded, color: RcTheme.accentCyan),
-            tooltip: 'Pinion Matrix',
-            onPressed: activeKit == null ? null : _showPinionMatrix,
-          ),
           IconButton(
             icon: const Icon(Icons.restart_alt_rounded, color: RcTheme.textMuted),
             tooltip: 'Reset to Kit Stock',
