@@ -48,7 +48,20 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('/sw.js');
+        const hadController = Boolean(navigator.serviceWorker.controller);
+        let refreshing = false;
+
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (!hadController || refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+
+        navigator.serviceWorker
+            .register('/sw.js', { updateViaCache: 'none' })
+            .then(function (registration) {
+              registration.update();
+            });
       });
     }
   </script>

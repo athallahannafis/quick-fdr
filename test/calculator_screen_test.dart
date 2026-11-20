@@ -217,4 +217,48 @@ void main() {
 
     expect(find.text('(71T / 25T) × 2.60 IGR'), findsOneWidget);
   });
+
+  testWidgets('preserves updated pinion and spur for custom presets across tab switches', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: RcTheme.themeData,
+        home: CalculatorScreen(storage: storage),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Add a custom preset
+    await tester.ensureVisible(find.text('+ Add Kit'));
+    await tester.tap(find.text('+ Add Kit'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('preset_name_field')), 'Xray X4');
+    await tester.enterText(find.byKey(const Key('preset_igr_field')), '1.90');
+    await tester.enterText(find.byKey(const Key('preset_spur_field')), '90');
+    await tester.enterText(find.byKey(const Key('preset_pinion_field')), '30');
+    await tester.tap(find.text('Save Preset'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('(90T / 30T) × 1.90 IGR'), findsOneWidget);
+
+    // Adjust custom preset Pinion +1 (30 -> 31) and Spur -1 (90 -> 89)
+    await tester.ensureVisible(find.text('+1').first);
+    await tester.tap(find.text('+1').first);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('-1').last);
+    await tester.tap(find.text('-1').last);
+    await tester.pumpAndSettle();
+    expect(find.text('(89T / 31T) × 1.90 IGR'), findsOneWidget);
+
+    // Switch to TT02 and back to Xray X4
+    await tester.ensureVisible(find.text('TT02').first);
+    await tester.tap(find.text('TT02').first);
+    await tester.pumpAndSettle();
+    expect(find.text('(70T / 22T) × 2.60 IGR'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Xray X4').first);
+    await tester.tap(find.text('Xray X4').first);
+    await tester.pumpAndSettle();
+    expect(find.text('(89T / 31T) × 1.90 IGR'), findsOneWidget);
+  });
 }
