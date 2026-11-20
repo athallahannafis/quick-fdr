@@ -59,7 +59,7 @@ void main() {
       expect(find.text('LC10B5'), findsOneWidget);
       expect(find.text('PTG2R'), findsOneWidget);
       expect(find.text('TT02'), findsOneWidget);
-      expect(find.text('+ Add Kit'), findsOneWidget);
+      expect(find.text('Add Kit'), findsOneWidget);
       expect(find.byKey(const Key('preset_pin_badge_lc10b5')), findsOneWidget);
       expect(find.byKey(const Key('preset_pin_badge_ptg2r')), findsNothing);
       expect(find.byKey(const Key('preset_pin_badge_tt02')), findsNothing);
@@ -71,7 +71,7 @@ void main() {
       expect(selected.id, 'lc10b5');
 
       // Tap Add Kit
-      await tester.tap(find.text('+ Add Kit'));
+      await tester.tap(find.text('Add Kit'));
       await tester.pump();
       expect(addTapped, isTrue);
 

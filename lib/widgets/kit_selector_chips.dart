@@ -89,12 +89,12 @@ class KitSelectorChips extends StatelessWidget {
         itemCount: presets.length + 1,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          // "+ Add Kit" action chip at the end
+          // "Add Kit" action chip at the end
           if (index == presets.length) {
             return ActionChip(
               avatar: const Icon(Icons.add_rounded, size: 18, color: RcTheme.accentCyan),
               label: const Text(
-                '+ Add Kit',
+                'Add Kit',
                 style: TextStyle(
                   color: RcTheme.accentCyan,
                   fontSize: 13,

@@ -253,8 +253,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Add a custom preset
-    await tester.ensureVisible(find.text('+ Add Kit'));
-    await tester.tap(find.text('+ Add Kit'));
+    await tester.ensureVisible(find.text('Add Kit'));
+    await tester.tap(find.text('Add Kit'));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(const Key('preset_name_field')), 'Xray X4');
