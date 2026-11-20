@@ -1,0 +1,36 @@
+{
+    "name": "Quick FDR",
+    "short_name": "Quick FDR",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#0B132B",
+    "theme_color": "#0B132B",
+    "description": "RC Final Drive Ratio calculator and gearing preset manager.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-1024.png",
+            "sizes": "1024x1024",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-1024.png",
+            "sizes": "1024x1024",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

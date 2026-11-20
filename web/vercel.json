@@ -1,0 +1,13 @@
+{
+  "headers": [
+    {
+      "source": "/(sw\\.js|index\\.html|manifest\\.json)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
+  ]
+}
