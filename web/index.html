@@ -157,20 +157,6 @@
       const actionBtn = document.getElementById('pwa-install-action');
       const closeBtn = document.getElementById('pwa-install-close');
 
-      const isStandalone =
-        window.matchMedia('(display-mode: standalone)').matches ||
-        window.navigator.standalone === true;
-
-      if (isStandalone) return;
-
-      let dismissedAt = 0;
-      try {
-        dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || 0);
-      } catch (_) {}
-      if (dismissedAt && Date.now() - dismissedAt < DISMISS_TTL_MS) {
-        return;
-      }
-
       const isIos =
         /iphone|ipad|ipod/i.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -187,47 +173,31 @@
         );
       }
 
-      function showInstructionsBanner() {
-        if (isIos) {
-          subtitle.innerHTML = 'Tap <strong>Share</strong> then <strong>Add to Home Screen</strong> for offline access.';
-        } else if (isAndroid) {
-          subtitle.innerHTML = 'Tap browser <strong>menu (&#8942;)</strong> then <strong>Install app</strong> for offline access.';
-        } else {
-          subtitle.innerHTML = 'Click the <strong>Install</strong> icon in your browser address bar or menu.';
-        }
-        actionBtn.hidden = true;
-        banner.classList.add('visible');
+      function isRecentlyDismissed() {
+        let dismissedAt = 0;
+        try {
+          dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || 0);
+        } catch (_) {}
+        return Boolean(dismissedAt && Date.now() - dismissedAt < DISMISS_TTL_MS);
       }
 
-      window.quickFdrPwaCanShow = function () {
-        return !checkStandalone();
-      };
-
-      window.quickFdrPwaSetOnInstalled = function (cb) {
-        onInstalledCallback = typeof cb === 'function' ? cb : null;
-      };
-
-      window.quickFdrPwaTriggerInstall = async function () {
+      function showBanner() {
         if (checkStandalone()) return;
-        try {
-          localStorage.removeItem(DISMISS_KEY);
-        } catch (_) {}
-
         if (deferredPrompt) {
-          const promptEvent = deferredPrompt;
-          deferredPrompt = null;
-          promptEvent.prompt();
-          const choice = await promptEvent.userChoice;
-          if (choice && choice.outcome === 'accepted') {
-            hideBanner(false);
+          subtitle.textContent = 'Add to your home screen for offline pit-bench use.';
+          actionBtn.hidden = false;
+        } else {
+          if (isIos) {
+            subtitle.innerHTML = 'Tap <strong>Share</strong> then <strong>Add to Home Screen</strong> for offline access.';
+          } else if (isAndroid) {
+            subtitle.innerHTML = 'Tap browser <strong>menu (&#8942;)</strong> then <strong>Install app</strong> for offline access.';
           } else {
-            showInstructionsBanner();
+            subtitle.innerHTML = 'Click the <strong>Install</strong> icon in your browser address bar or menu.';
           }
-          return;
+          actionBtn.hidden = true;
         }
-
-        showInstructionsBanner();
-      };
+        banner.classList.add('visible');
+      }
 
       function hideBanner(persistDismiss) {
         if (fallbackTimer) {
@@ -242,10 +212,27 @@
         }
       }
 
+      window.quickFdrPwaCanShow = function () {
+        return !checkStandalone();
+      };
+
+      window.quickFdrPwaSetOnInstalled = function (cb) {
+        onInstalledCallback = typeof cb === 'function' ? cb : null;
+      };
+
+      window.quickFdrPwaTriggerInstall = function () {
+        if (checkStandalone()) return;
+        try {
+          localStorage.removeItem(DISMISS_KEY);
+        } catch (_) {}
+        showBanner();
+      };
+
       closeBtn.addEventListener('click', function () {
         hideBanner(true);
       });
 
+      // Always prevent the browser's automatic native install popup
       window.addEventListener('beforeinstallprompt', function (event) {
         event.preventDefault();
         deferredPrompt = event;
@@ -253,18 +240,16 @@
           clearTimeout(fallbackTimer);
           fallbackTimer = null;
         }
-        if (checkStandalone()) return;
-
-        subtitle.textContent = 'Add to your home screen for offline pit-bench use.';
-        actionBtn.hidden = false;
-        banner.classList.add('visible');
+        if (checkStandalone() || isRecentlyDismissed()) return;
+        showBanner();
       });
 
       actionBtn.addEventListener('click', async function () {
         if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        const choice = await deferredPrompt.userChoice;
+        const promptEvent = deferredPrompt;
         deferredPrompt = null;
+        promptEvent.prompt();
+        const choice = await promptEvent.userChoice;
         if (choice && choice.outcome === 'accepted') {
           hideBanner(false);
         } else {
@@ -280,13 +265,14 @@
         }
       });
 
+      if (checkStandalone() || isRecentlyDismissed()) return;
+
       if (isIos) {
-        showInstructionsBanner();
+        showBanner();
       } else if (isAndroid) {
-        // Fallback when Chrome suppresses beforeinstallprompt or in browsers without it
         fallbackTimer = setTimeout(function () {
           if (deferredPrompt) return;
-          showInstructionsBanner();
+          showBanner();
         }, 1500);
       }
     })();
